@@ -1,0 +1,167 @@
+/* App shell layout for Tonic (Phase 0 static showcase). */
+
+.tn-app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100vh;
+  background: var(--bg);
+}
+
+/* ---- transport bar ---- */
+.tn-transport {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-1);
+}
+.tn-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.tn-brand__logo {
+  font-weight: var(--fw-bold);
+  font-size: 22px;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+.tn-brand__tag {
+  font-size: var(--fs-label);
+  color: var(--text-muted);
+}
+.tn-transport__group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tn-transport__spacer {
+  flex: 1;
+}
+
+/* ---- body: rail + arrangement ---- */
+.tn-body {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  min-height: 0;
+  overflow: hidden;
+}
+.tn-rail {
+  background: var(--bg-rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+}
+.tn-rail__btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-button);
+  border: none;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tn-rail__btn:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.tn-arrange {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* keep the mixer from growing taller than its content needs */
+.tn-mixer {
+  flex: 0 0 auto;
+}
+
+/* ---- track lane ---- */
+.tn-lane {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: var(--space-2);
+  align-items: center;
+}
+.tn-lane__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-button);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--track-color, var(--accent));
+}
+.tn-lane__name {
+  flex: 1;
+  font-weight: var(--fw-medium);
+}
+.tn-lane__strip {
+  height: 64px;
+  border-radius: var(--radius-button);
+  background: var(--surface-sunken);
+  box-shadow: var(--inset);
+  position: relative;
+  overflow: hidden;
+}
+.tn-lane__wave {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--track-color, var(--accent)) 0,
+    var(--track-color, var(--accent)) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  opacity: 0.45;
+}
+
+/* ---- mixer ---- */
+.tn-mixer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+}
+.tn-strip {
+  min-width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: var(--space-2);
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--bevel);
+}
+.tn-strip__name {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tn-strip__row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}

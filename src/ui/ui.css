@@ -1,0 +1,264 @@
+/* Component styles for the Tonic design system. All values derive from tokens.css. */
+
+/* ---------- Button ---------- */
+.tn-btn {
+  font-family: var(--font-mono);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-medium);
+  border-radius: var(--radius-button);
+  border: 1px solid var(--border-strong);
+  padding: 8px 16px;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--bevel), var(--shadow-1);
+  transition: transform 0.04s ease, background 0.12s ease;
+  user-select: none;
+}
+.tn-btn:active {
+  transform: translateY(1px);
+  box-shadow: var(--inset);
+}
+.tn-btn--primary {
+  background: var(--accent);
+  border-color: var(--accent-hover);
+  color: var(--text-inverse);
+}
+.tn-btn--primary:hover {
+  background: var(--accent-hover);
+}
+.tn-btn--ghost {
+  background: transparent;
+  box-shadow: none;
+  border-color: var(--border);
+}
+.tn-btn--icon {
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.tn-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Knob ---------- */
+.tn-knob {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.tn-knob__dial {
+  cursor: ns-resize;
+  touch-action: none;
+}
+.tn-knob__label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.tn-knob__value {
+  font-size: var(--fs-label);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Fader ---------- */
+.tn-fader {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+.tn-fader__track {
+  position: relative;
+  width: 40px;
+  height: 160px;
+  border-radius: var(--radius-button);
+  background: var(--surface-sunken);
+  box-shadow: var(--inset);
+  cursor: ns-resize;
+  touch-action: none;
+}
+.tn-fader__slot {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  transform: translateX(-50%);
+  background: var(--border-strong);
+  border-radius: var(--radius-pill);
+}
+.tn-fader__cap {
+  position: absolute;
+  left: 50%;
+  width: 30px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: 5px;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-2);
+}
+.tn-fader__cap::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--accent);
+  border-radius: 2px;
+}
+.tn-fader__value {
+  font-size: var(--fs-label);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Toggle ---------- */
+.tn-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.tn-toggle__switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunken);
+  box-shadow: var(--inset);
+  transition: background 0.15s ease;
+}
+.tn-toggle__switch[data-on="true"] {
+  background: var(--accent);
+}
+.tn-toggle__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: transform 0.15s ease;
+}
+.tn-toggle__switch[data-on="true"] .tn-toggle__knob {
+  transform: translateX(20px);
+}
+.tn-toggle__label {
+  font-size: var(--fs-label);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* ---------- Panel ---------- */
+.tn-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--bevel), var(--shadow-2);
+  padding: var(--space-3);
+  position: relative;
+}
+.tn-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+.tn-panel__title {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+}
+
+/* ---------- LED ---------- */
+.tn-led {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  box-shadow: var(--inset);
+}
+.tn-led[data-state="on"] {
+  background: var(--good);
+  box-shadow: 0 0 6px var(--good);
+}
+.tn-led[data-state="warn"] {
+  background: var(--warn);
+  box-shadow: 0 0 6px var(--warn);
+}
+.tn-led[data-state="blink"] {
+  background: var(--good);
+  animation: tn-blink 1s steps(1) infinite;
+}
+@keyframes tn-blink {
+  50% {
+    background: var(--border-strong);
+    box-shadow: var(--inset);
+  }
+}
+
+/* ---------- Help ---------- */
+.tn-help {
+  position: relative;
+  display: inline-flex;
+}
+.tn-help__btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: var(--fw-bold);
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.tn-help__btn:hover,
+.tn-help__btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.tn-help__pop {
+  position: absolute;
+  z-index: 20;
+  top: 26px;
+  left: 0;
+  width: 240px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-button);
+  box-shadow: var(--shadow-2);
+  padding: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text);
+}
+.tn-help__pop strong {
+  display: block;
+  margin-bottom: 4px;
+}
