@@ -78,6 +78,29 @@ server.tool(
 );
 
 server.tool(
+  "remove_track",
+  "Remove a track from the running Tonic project.",
+  { trackId: z.string().describe("The track id (from list_tracks / get_project)") },
+  async ({ trackId }) => {
+    await bridge.command("removeTrack", { trackId });
+    return json({ ok: true, trackId });
+  },
+);
+
+server.tool(
+  "rename_track",
+  "Rename a track on the running Tonic project.",
+  {
+    trackId: z.string().describe("The track id"),
+    name: z.string().describe("The new track name"),
+  },
+  async ({ trackId, name }) => {
+    await bridge.command("renameTrack", { trackId, name });
+    return json({ ok: true, trackId, name });
+  },
+);
+
+server.tool(
   "set_track_volume",
   "Set a track's volume in decibels (clamped to -60..+6 dB) on the running Tonic project.",
   {
@@ -87,6 +110,55 @@ server.tool(
   async ({ trackId, volumeDb }) => {
     await bridge.command("setTrackVolume", { trackId, volumeDb });
     return json({ ok: true, trackId, volumeDb });
+  },
+);
+
+server.tool(
+  "set_track_pan",
+  "Set a track's stereo pan (-1 = hard left, 0 = center, +1 = hard right).",
+  {
+    trackId: z.string().describe("The track id"),
+    pan: z.number().min(-1).max(1).describe("Pan, -1..1"),
+  },
+  async ({ trackId, pan }) => {
+    await bridge.command("setTrackPan", { trackId, pan });
+    return json({ ok: true, trackId, pan });
+  },
+);
+
+server.tool(
+  "mute_track",
+  "Mute or unmute a track on the running Tonic project.",
+  {
+    trackId: z.string().describe("The track id"),
+    muted: z.boolean().describe("true to mute, false to unmute"),
+  },
+  async ({ trackId, muted }) => {
+    await bridge.command("setTrackMute", { trackId, muted });
+    return json({ ok: true, trackId, muted });
+  },
+);
+
+server.tool(
+  "solo_track",
+  "Solo or unsolo a track. When any track is soloed, only soloed tracks are audible.",
+  {
+    trackId: z.string().describe("The track id"),
+    soloed: z.boolean().describe("true to solo, false to unsolo"),
+  },
+  async ({ trackId, soloed }) => {
+    await bridge.command("setTrackSolo", { trackId, soloed });
+    return json({ ok: true, trackId, soloed });
+  },
+);
+
+server.tool(
+  "set_master_volume",
+  "Set the master output volume in dB (clamped to -60..+6).",
+  { volumeDb: z.number().describe("Master volume in dB") },
+  async ({ volumeDb }) => {
+    await bridge.command("setMasterVolume", { volumeDb });
+    return json({ ok: true, volumeDb });
   },
 );
 
@@ -124,8 +196,9 @@ async function main() {
   bridge.start();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[tonic-mcp] Phase 1 server ready on stdio (tools: get_project, list_tracks, " +
-    "add_track, set_track_volume, set_tempo, play, stop).");
+  console.error("[tonic-mcp] server ready on stdio (tools: get_project, list_tracks, add_track, " +
+    "remove_track, rename_track, set_track_volume, set_track_pan, mute_track, solo_track, " +
+    "set_master_volume, set_tempo, play, stop).");
 }
 
 main().catch((err) => {

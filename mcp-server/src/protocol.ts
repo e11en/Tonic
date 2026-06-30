@@ -11,7 +11,13 @@ export const WS_DEFAULT_PORT = 8765;
 
 export type BridgeAction =
   | "addTrack"
+  | "removeTrack"
+  | "renameTrack"
   | "setTrackVolume"
+  | "setTrackPan"
+  | "setTrackMute"
+  | "setTrackSolo"
+  | "setMasterVolume"
   | "setTempo"
   | "play"
   | "stop";

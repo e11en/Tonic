@@ -1,7 +1,19 @@
 import { useState } from "react";
 import { Button, Fader, Knob, LED, Panel, Toggle, Help } from "@/ui";
 import { useTonic } from "@/state/store";
-import { addTrack, setTempo, setTrackVolume, play, stop } from "@/state/actions";
+import {
+  addTrack,
+  removeTrack,
+  renameTrack,
+  setTempo,
+  setTrackVolume,
+  setTrackPan,
+  setTrackMute,
+  setTrackSolo,
+  setMasterVolume,
+  play,
+  stop,
+} from "@/state/actions";
 import { audioEngine } from "@/audio/engine";
 import "./shell.css";
 
@@ -21,6 +33,12 @@ export function AppShell() {
   const tempo = useTonic((s) => s.project.tempo);
   const playing = useTonic((s) => s.project.transport.state === "playing");
   const tracks = useTonic((s) => s.project.tracks);
+  const masterVolume = useTonic((s) => s.project.masterVolumeDb);
+
+  const promptRename = (id: string, current: string) => {
+    const name = window.prompt("Track name", current);
+    if (name && name.trim()) renameTrack(id, name.trim());
+  };
 
   const setThemeMode = (dark: boolean) => {
     const next = dark ? "dark" : "light";
@@ -104,8 +122,24 @@ export function AppShell() {
               {tracks.map((t) => (
                 <div className="tn-lane" key={t.id}>
                   <div className="tn-lane__head" style={{ ["--track-color" as string]: t.color }}>
-                    <LED state={t.muted ? "warn" : "on"} title={t.muted ? "Muted" : "Active"} />
-                    <span className="tn-lane__name">{t.name}</span>
+                    <LED
+                      state={t.soloed ? "blink" : t.muted ? "warn" : "on"}
+                      title={t.soloed ? "Soloed" : t.muted ? "Muted" : "Active"}
+                    />
+                    <span
+                      className="tn-lane__name"
+                      title="Double-click to rename"
+                      onDoubleClick={() => promptRename(t.id, t.name)}
+                    >
+                      {t.name}
+                    </span>
+                    <button
+                      className="tn-lane__remove"
+                      title="Remove track"
+                      onClick={() => removeTrack(t.id)}
+                    >
+                      ×
+                    </button>
                   </div>
                   <div className="tn-lane__strip">
                     {!t.muted && (
@@ -134,29 +168,35 @@ export function AppShell() {
               sound is distorting (clipping).
             </Help>
           </div>
-          <Knob value={0} min={-1} max={1} onChange={() => {}} label="Pan" format={panFmt} size={44} />
-          <Fader value={0} onChange={() => {}} format={dbFmt} />
+          <div className="tn-strip__pan-placeholder" />
+          <Fader value={masterVolume} onChange={setMasterVolume} format={dbFmt} />
           <LED state="on" title="Master" />
         </div>
 
         {tracks.map((t) => (
           <div className="tn-strip" key={t.id}>
-            <div className="tn-strip__name" style={{ color: t.color }}>
+            <div
+              className="tn-strip__name"
+              style={{ color: t.color }}
+              title="Double-click to rename"
+              onDoubleClick={() => promptRename(t.id, t.name)}
+            >
               {t.name}
             </div>
-            <Knob value={t.pan} min={-1} max={1} onChange={() => {}} label="Pan" format={panFmt} size={44} />
-            <Fader
-              value={t.volumeDb}
-              onChange={(v) => setTrackVolume(t.id, v)}
-              format={dbFmt}
+            <Knob
+              value={t.pan}
+              min={-1}
+              max={1}
+              onChange={(v) => setTrackPan(t.id, v)}
+              label="Pan"
+              format={panFmt}
+              size={44}
             />
+            <Fader value={t.volumeDb} onChange={(v) => setTrackVolume(t.id, v)} format={dbFmt} />
             <div className="tn-strip__row">
-              <Toggle checked={t.muted} onChange={() => {}} label="M" />
-              <Toggle checked={t.soloed} onChange={() => {}} label="S" />
+              <Toggle checked={t.muted} onChange={(v) => setTrackMute(t.id, v)} label="M" />
+              <Toggle checked={t.soloed} onChange={(v) => setTrackSolo(t.id, v)} label="S" />
             </div>
-            <Button variant="ghost" onClick={() => {}}>
-              + FX
-            </Button>
           </div>
         ))}
       </section>

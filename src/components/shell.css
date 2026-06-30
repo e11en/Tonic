@@ -107,6 +107,24 @@
 .tn-lane__name {
   flex: 1;
   font-weight: var(--fw-medium);
+  cursor: text;
+}
+.tn-lane__remove {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim, var(--text));
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  line-height: 1;
+  font-size: 16px;
+}
+.tn-lane__remove:hover {
+  background: var(--track-4, #e5534b);
+  color: #fff;
+  border-color: transparent;
 }
 .tn-lane__strip {
   height: 64px;
@@ -164,4 +182,10 @@
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.tn-strip__name {
+  cursor: default;
+}
+.tn-strip__pan-placeholder {
+  height: 44px;
 }

@@ -21,7 +21,13 @@ export const WS_URL = `ws://127.0.0.1:${WS_DEFAULT_PORT}`;
 /** Mutating/transport actions the bridge can ask the running app to perform. */
 export type BridgeAction =
   | "addTrack"
+  | "removeTrack"
+  | "renameTrack"
   | "setTrackVolume"
+  | "setTrackPan"
+  | "setTrackMute"
+  | "setTrackSolo"
+  | "setMasterVolume"
   | "setTempo"
   | "play"
   | "stop";
@@ -29,7 +35,13 @@ export type BridgeAction =
 /** Argument shape per action — keeps the UI, the bridge, and `dispatch` honest. */
 export interface ActionPayloads {
   addTrack: { name?: string; kind?: TrackKind };
+  removeTrack: { trackId: string };
+  renameTrack: { trackId: string; name: string };
   setTrackVolume: { trackId: string; volumeDb: number };
+  setTrackPan: { trackId: string; pan: number };
+  setTrackMute: { trackId: string; muted: boolean };
+  setTrackSolo: { trackId: string; soloed: boolean };
+  setMasterVolume: { volumeDb: number };
   setTempo: { bpm: number };
   play: Record<string, never>;
   stop: Record<string, never>;

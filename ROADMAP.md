@@ -14,17 +14,16 @@ distinctive and riskiest part — proving it early validates the whole spine.
   (Knob/Fader/Toggle/Button/Panel/LED/Help), static AppShell, state skeletons, and a ping-only
   MCP stub registered in the root `.mcp.json`.
 
-- [ ] **Phase 1 — Vertical slice + bridge spine** 🟢 *in progress*
+- [x] **Phase 1 — Vertical slice + bridge spine** ✅ *complete*
   Zustand store + `actions.ts` (`addTrack`, `setTrackVolume`, `setTempo`, `play`, `stop`). Minimal
   Tone.js engine (Transport + per-track Channel, reconcile-on-subscribe). Transport bar + one
-  working track lane/fader. WS bridge in the MCP server + matching tools. **Acceptance:** from
-  Claude, add a track and change tempo/volume and see+hear the running browser app react.
-  *Status:* code complete; spine verified end-to-end via an MCP test harness (MCP→app and
-  app→MCP both proven). Remaining: in-session MCP reload after a Claude Code restart.
+  working track lane/fader. WS bridge in the MCP server + matching tools. Verified end-to-end via
+  an MCP test harness (MCP→app and app→MCP both proven).
 
-- [ ] **Phase 2 — Tracks, mixer, persistence**
+- [x] **Phase 2 — Tracks, mixer, persistence** ✅ *complete*
   Multi-track lane list, full mixer with channel strips (volume/pan/mute/solo) + master strip,
-  IndexedDB autosave/load.
+  IndexedDB autosave/load. Verified: UI mixer + reload-restores-state in-browser; new MCP tools
+  (set_track_pan, mute_track, solo_track, set_master_volume, rename_track, remove_track) via harness.
 
 - [ ] **Phase 3 — Samples & playback**
   Upload wav/mp3 → decode → IndexedDB + cache. Audio clips on the timeline (Tone.Player), drag to

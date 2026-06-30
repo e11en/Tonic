@@ -64,6 +64,9 @@ class AudioEngine {
       transport.stop();
     }
 
+    // Solo logic: if any track is soloed, only soloed tracks are audible.
+    const anySoloed = project.tracks.some((t) => t.soloed);
+
     // Tracks: diff by id.
     const seen = new Set<string>();
     for (const track of project.tracks) {
@@ -75,7 +78,8 @@ class AudioEngine {
       }
       channel.volume.rampTo(track.volumeDb, RAMP_SEC);
       channel.pan.rampTo(track.pan, RAMP_SEC);
-      channel.mute = track.muted;
+      // Effective mute = explicit mute OR (something is soloed and this track isn't).
+      channel.mute = track.muted || (anySoloed && !track.soloed);
     }
 
     // Dispose channels for tracks that no longer exist.
