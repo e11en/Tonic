@@ -35,11 +35,18 @@ interface PlayerEntry {
   sig: string;
 }
 
+interface PartEntry {
+  part: Tone.Part;
+  sig: string;
+}
+
 class AudioEngine {
   private channels = new Map<string, Tone.Channel>();
   private buffers = new Map<string, Tone.ToneAudioBuffer>();
   private loadingBuffers = new Set<string>();
   private players = new Map<string, PlayerEntry>(); // keyed by clip id
+  private instruments = new Map<string, Tone.PolySynth>(); // keyed by track id
+  private parts = new Map<string, PartEntry>(); // keyed by clip id
   private unsubscribe?: () => void;
   private started = false;
   private booted = false;
@@ -93,6 +100,8 @@ class AudioEngine {
     channels: number;
     players: number;
     buffers: number;
+    instruments: number;
+    parts: number;
   } {
     const transport = Tone.getTransport();
     return {
@@ -105,6 +114,8 @@ class AudioEngine {
       channels: this.channels.size,
       players: this.players.size,
       buffers: this.buffers.size,
+      instruments: this.instruments.size,
+      parts: this.parts.size,
     };
   }
 
@@ -177,63 +188,109 @@ class AudioEngine {
       channel.pan.rampTo(track.pan, RAMP_SEC);
       // Effective mute = explicit mute OR (something is soloed and this track isn't).
       channel.mute = track.muted || (anySoloed && !track.soloed);
+
+      // Instrument tracks get a PolySynth feeding the channel.
+      if (track.kind === "instrument") {
+        if (!this.instruments.has(track.id)) {
+          const synth = new Tone.PolySynth(Tone.Synth).connect(channel);
+          this.instruments.set(track.id, synth);
+        }
+      } else if (this.instruments.has(track.id)) {
+        this.instruments.get(track.id)!.dispose();
+        this.instruments.delete(track.id);
+      }
     }
 
-    // Dispose channels for tracks that no longer exist.
+    // Dispose channels (+ instruments) for tracks that no longer exist.
     for (const [id, channel] of this.channels) {
       if (!seen.has(id)) {
         channel.dispose();
         this.channels.delete(id);
+        this.instruments.get(id)?.dispose();
+        this.instruments.delete(id);
       }
     }
 
     this.reconcileClips(project);
   }
 
-  /** Build/update/dispose per-clip Tone.Players, synced to the transport. */
+  /** Build/update/dispose per-clip audio Players and MIDI Parts, synced to the transport. */
   private reconcileClips(project: Project): void {
-    const seenClips = new Set<string>();
+    const seenPlayers = new Set<string>();
+    const seenParts = new Set<string>();
+    const secPerBeat = 60 / project.tempo;
 
     for (const track of project.tracks) {
       const channel = this.channels.get(track.id);
       if (!channel) continue;
+
       for (const clip of track.clips) {
-        if (!clip.audio) continue; // Phase 3 handles audio clips only
-        seenClips.add(clip.id);
+        if (clip.audio) {
+          seenPlayers.add(clip.id);
+          const buffer = this.buffers.get(clip.audio.sampleId);
+          if (!buffer || !buffer.loaded) {
+            this.ensureBuffer(clip.audio.sampleId);
+            continue; // a later reconcile builds the player once decoded
+          }
+          const sig = [
+            track.id,
+            clip.audio.sampleId,
+            clip.startSec,
+            clip.durationSec,
+            clip.audio.offsetSec,
+            clip.audio.gainDb,
+          ].join("|");
+          const existing = this.players.get(clip.id);
+          if (existing && existing.sig === sig) continue;
+          existing?.player.dispose();
+          const player = new Tone.Player(buffer).connect(channel);
+          player.volume.value = clip.audio.gainDb;
+          player.sync().start(clip.startSec, clip.audio.offsetSec, clip.durationSec);
+          this.players.set(clip.id, { player, sig });
+        } else if (clip.midi) {
+          const synth = this.instruments.get(track.id);
+          if (!synth) continue; // only instrument tracks play MIDI
+          seenParts.add(clip.id);
 
-        const buffer = this.buffers.get(clip.audio.sampleId);
-        if (!buffer || !buffer.loaded) {
-          this.ensureBuffer(clip.audio.sampleId);
-          continue; // a later reconcile builds the player once decoded
+          // Signature includes tempo + every note, so any edit rebuilds the part.
+          const sig = [
+            track.id,
+            clip.startSec,
+            project.tempo,
+            clip.midi.notes
+              .map((n) => `${n.pitch}@${n.startBeats}:${n.durationBeats}/${n.velocity}`)
+              .join(","),
+          ].join("|");
+          const existing = this.parts.get(clip.id);
+          if (existing && existing.sig === sig) continue;
+          existing?.part.dispose();
+
+          const events = clip.midi.notes.map((n) => ({
+            time: n.startBeats * secPerBeat,
+            pitch: Tone.Frequency(n.pitch, "midi").toFrequency(),
+            dur: n.durationBeats * secPerBeat,
+            vel: n.velocity,
+          }));
+          const part = new Tone.Part((time, ev) => {
+            synth.triggerAttackRelease(ev.pitch, ev.dur, time, ev.vel);
+          }, events);
+          part.start(clip.startSec);
+          this.parts.set(clip.id, { part, sig });
         }
-
-        const sig = [
-          track.id,
-          clip.audio.sampleId,
-          clip.startSec,
-          clip.durationSec,
-          clip.audio.offsetSec,
-          clip.audio.gainDb,
-        ].join("|");
-
-        const existing = this.players.get(clip.id);
-        if (existing && existing.sig === sig) continue;
-        existing?.player.dispose();
-
-        const player = new Tone.Player(buffer).connect(channel);
-        player.volume.value = clip.audio.gainDb;
-        // Schedule on the transport timeline: start at clip.startSec, reading from
-        // offsetSec into the sample, for durationSec.
-        player.sync().start(clip.startSec, clip.audio.offsetSec, clip.durationSec);
-        this.players.set(clip.id, { player, sig });
       }
     }
 
-    // Dispose players whose clips were removed.
+    // Dispose players + parts whose clips were removed.
     for (const [clipId, entry] of this.players) {
-      if (!seenClips.has(clipId)) {
+      if (!seenPlayers.has(clipId)) {
         entry.player.dispose();
         this.players.delete(clipId);
+      }
+    }
+    for (const [clipId, entry] of this.parts) {
+      if (!seenParts.has(clipId)) {
+        entry.part.dispose();
+        this.parts.delete(clipId);
       }
     }
   }
@@ -243,6 +300,10 @@ class AudioEngine {
     this.unsubscribe?.();
     for (const entry of this.players.values()) entry.player.dispose();
     this.players.clear();
+    for (const entry of this.parts.values()) entry.part.dispose();
+    this.parts.clear();
+    for (const synth of this.instruments.values()) synth.dispose();
+    this.instruments.clear();
     for (const channel of this.channels.values()) channel.dispose();
     this.channels.clear();
     for (const buffer of this.buffers.values()) buffer.dispose();

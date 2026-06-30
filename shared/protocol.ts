@@ -34,6 +34,10 @@ export type BridgeAction =
   | "armTrack"
   | "setLoopRegion"
   | "clearLoopRegion"
+  | "addMidiClip"
+  | "placeNote"
+  | "removeNote"
+  | "updateNote"
   | "setTempo"
   | "play"
   | "record"
@@ -62,6 +66,24 @@ export interface ActionPayloads {
   armTrack: { trackId: string; armed: boolean };
   setLoopRegion: { startSec: number; endSec: number };
   clearLoopRegion: Record<string, never>;
+  addMidiClip: { trackId: string; startSec?: number; bars?: number };
+  placeNote: {
+    trackId: string;
+    clipId: string;
+    pitch: number;
+    startBeats: number;
+    durationBeats?: number;
+    velocity?: number;
+  };
+  removeNote: { trackId: string; clipId: string; noteId: string };
+  updateNote: {
+    trackId: string;
+    clipId: string;
+    noteId: string;
+    pitch?: number;
+    startBeats?: number;
+    durationBeats?: number;
+  };
   setTempo: { bpm: number };
   play: Record<string, never>;
   record: Record<string, never>;

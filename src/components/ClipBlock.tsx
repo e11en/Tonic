@@ -8,13 +8,15 @@ interface ClipBlockProps {
   label: string;
   color: string;
   pxPerSec: number;
+  /** Override double-click (e.g. open the piano roll for MIDI clips). Defaults to remove. */
+  onOpen?: () => void;
 }
 
 /**
  * A clip on the timeline. Drag horizontally to move it (→ `moveClip`), double-click
  * to remove it. Position/size derive purely from the store, so MCP moves animate too.
  */
-export function ClipBlock({ trackId, clip, label, color, pxPerSec }: ClipBlockProps) {
+export function ClipBlock({ trackId, clip, label, color, pxPerSec, onOpen }: ClipBlockProps) {
   const drag = useRef<{ startX: number; startSec: number } | null>(null);
 
   const onPointerDown = (e: React.PointerEvent) => {
@@ -39,11 +41,15 @@ export function ClipBlock({ trackId, clip, label, color, pxPerSec }: ClipBlockPr
         width: Math.max(24, clip.durationSec * pxPerSec),
         ["--track-color" as string]: color,
       }}
-      title={`${label} — drag to move, double-click to remove`}
+      title={
+        onOpen
+          ? `${label} — drag to move, double-click to edit notes`
+          : `${label} — drag to move, double-click to remove`
+      }
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onDoubleClick={() => removeClip(trackId, clip.id)}
+      onDoubleClick={() => (onOpen ? onOpen() : removeClip(trackId, clip.id))}
     >
       <span className="tn-clip__label">{label}</span>
     </div>

@@ -14,6 +14,7 @@ import {
   setMasterVolume,
   setLoopRegion,
   clearLoopRegion,
+  addMidiClip,
   play,
   stop,
 } from "@/state/actions";
@@ -21,6 +22,7 @@ import { audioEngine } from "@/audio/engine";
 import { startRecording, stopRecording, isRecording } from "@/audio/recorder";
 import { ClipBlock } from "./ClipBlock";
 import { SampleBrowser } from "./SampleBrowser";
+import { PianoRoll } from "./PianoRoll";
 import "./shell.css";
 
 const dbFmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} dB`;
@@ -40,6 +42,7 @@ type SidePanel = "samples" | null;
 export function AppShell() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [sidePanel, setSidePanel] = useState<SidePanel>("samples");
+  const [editorClip, setEditorClip] = useState<{ trackId: string; clipId: string } | null>(null);
 
   // Store-bound state (single source of truth).
   const tempo = useTonic((s) => s.project.tempo);
@@ -78,6 +81,17 @@ export function AppShell() {
   const toggleLoop = () => {
     if (loop) clearLoopRegion();
     else setLoopRegion(0, 4); // default 4-second loop region
+  };
+
+  const addInstrument = () => {
+    const trackId = addTrack({ kind: "instrument", name: "Synth" });
+    const clipId = addMidiClip(trackId, 0, 2);
+    if (clipId) setEditorClip({ trackId, clipId });
+  };
+
+  const addMidiClipAndEdit = (trackId: string) => {
+    const clipId = addMidiClip(trackId, 0, 2);
+    if (clipId) setEditorClip({ trackId, clipId });
   };
 
   const promptRename = (id: string, current: string) => {
@@ -204,6 +218,15 @@ export function AppShell() {
                     >
                       {t.name}
                     </span>
+                    {t.kind === "instrument" && (
+                      <button
+                        className="tn-lane__midi"
+                        title="Add a MIDI clip and edit notes"
+                        onClick={() => addMidiClipAndEdit(t.id)}
+                      >
+                        ♪+
+                      </button>
+                    )}
                     <button
                       className={`tn-lane__arm${t.armed ? " is-armed" : ""}`}
                       title={t.armed ? "Armed for recording" : "Arm for recording"}
@@ -237,21 +260,37 @@ export function AppShell() {
                         key={c.id}
                         trackId={t.id}
                         clip={c}
-                        label={c.audio ? samples[c.audio.sampleId]?.name ?? "clip" : "clip"}
+                        label={
+                          c.audio
+                            ? samples[c.audio.sampleId]?.name ?? "clip"
+                            : `♪ ${c.midi?.notes.length ?? 0}`
+                        }
                         color={t.color}
                         pxPerSec={PX_PER_SEC}
+                        onOpen={c.midi ? () => setEditorClip({ trackId: t.id, clipId: c.id }) : undefined}
                       />
                     ))}
                   </div>
                 </div>
               ))}
-              <div style={{ paddingTop: "var(--space-2)" }}>
+              <div style={{ paddingTop: "var(--space-2)", display: "flex", gap: "var(--space-2)" }}>
                 <Button variant="ghost" onClick={() => addTrack()}>
                   + Add track
+                </Button>
+                <Button variant="ghost" onClick={addInstrument}>
+                  + Add instrument
                 </Button>
               </div>
             </div>
           </Panel>
+
+          {editorClip && (
+            <PianoRoll
+              trackId={editorClip.trackId}
+              clipId={editorClip.clipId}
+              onClose={() => setEditorClip(null)}
+            />
+          )}
         </main>
       </div>
 

@@ -3,44 +3,40 @@
 > See `ROADMAP.md` for all phases. This file holds only the **current** phase, written out as
 > concrete steps. When the phase is done, empty this file and refill with the next phase.
 
-## Phase 4 — Recording
+## Phase 5 — Instruments & piano roll
 
-**Goal:** record the microphone onto an armed track; recordings become samples + clips. Loop region
-so playback (and recording) can loop.
+**Goal:** instrument tracks that play synthesized notes; a piano-roll editor to place MIDI notes;
+notes scheduled via Tone.Part. MCP `place_note`.
 
 **Status:** in progress.
 
 ### State / actions
-- [ ] `armTrack(trackId, armed)`; `setLoopRegion(startSec, endSec)`, `clearLoopRegion()`
-- [ ] transport `record()` (state "recording") + reuse `stop()`
-- [ ] protocol + dispatch for `armTrack`, `setLoopRegion`, `clearLoopRegion`
+- [ ] `addTrack` sets a default `InstrumentConfig` when kind is "instrument"
+- [ ] `addMidiClip(trackId, startSec, bars?)` → clip with `midi:{notes:[]}`
+- [ ] `placeNote(trackId, clipId, {pitch, startBeats, durationBeats?, velocity?})` → note id
+- [ ] `removeNote(trackId, clipId, noteId)`, `updateNote(...)` (move/resize)
+- [ ] protocol + dispatch for `addMidiClip`, `placeNote`, `removeNote`, `updateNote`
 
-### Engine
-- [ ] Treat "recording" like "playing" for the transport clock (start/stop)
-- [ ] Apply loop region: `transport.loop`/`loopStart`/`loopEnd`; clear when null
-- [ ] Expose loop state in `debugInfo()`
+### Engine — instrument playback
+- [ ] Per instrument track: a `Tone.PolySynth` connected to the track channel (create/dispose)
+- [ ] Per MIDI clip: a `Tone.Part` of note events, `start(clip.startSec)`, beats→seconds via tempo;
+      diff by id + signature (notes/tempo/start) → rebuild on change, dispose on removal
+- [ ] Verify sound via output meter
 
-### Recorder (`src/audio/recorder.ts`) — UI/hardware side
-- [ ] `startRecording(trackId, startSec)`: `Tone.UserMedia` → `Tone.Recorder`, set state recording
-- [ ] `stopRecording()`: stop recorder → Blob → `recordingToClip`
-- [ ] `recordingToClip(blob, trackId, startSec)`: decode + cache + persist as sample, then addClip
-      (separately testable without a real mic)
-
-### UI
-- [ ] Lane head: arm toggle (R)
-- [ ] Transport: Record button (records onto an armed track; arms the first track if none)
-- [ ] Loop region control (set/clear) + visual loop marker on the timeline
-- [ ] Recording indicator (LED/state)
+### UI — piano roll
+- [ ] Rail ⌨ opens the piano roll for a selected MIDI clip
+- [ ] Grid: ~2 octaves × beats; click empty cell → place note, click note → remove
+- [ ] "Add instrument" affordance (adds an instrument track); double-click an instrument lane to
+      add a MIDI clip and open the roll
 
 ### MCP
-- [ ] `arm_track`, `set_loop_region`, `clear_loop_region` (mic capture stays a UI action)
+- [ ] `add_midi_clip`, `place_note`, `remove_note` (instrument tracks via add_track kind:"instrument")
 
 ### Verification
 - [ ] `npm run typecheck` (app + mcp) + `npm run build` pass
-- [ ] Loop region: set via MCP/UI → engine transport loops (debugInfo)
-- [ ] `recordingToClip` with a synthetic blob → new sample + clip appears + plays
-- [ ] arm toggle works; honest note on real-mic capture (needs hardware/permission)
+- [ ] Browser: add instrument track → MIDI clip → place notes in the roll → Play → audible synth
+- [ ] MCP harness: add_track(instrument) + add_midi_clip + place_note → notes appear + play
 - [ ] Commit + push (submodule + pointer)
 
 ### When done
-- [ ] Mark Phase 4 complete in `ROADMAP.md`, empty this file, refill with Phase 5 steps
+- [ ] Mark Phase 5 complete in `ROADMAP.md`, empty this file, refill with Phase 6 steps

@@ -229,6 +229,60 @@ server.tool(
 );
 
 server.tool(
+  "add_midi_clip",
+  "Add an empty MIDI clip to an instrument track (create one with add_track kind:\"instrument\"). " +
+    "Returns the new clip id; then use place_note to add notes.",
+  {
+    trackId: z.string().describe("The instrument track id"),
+    startSec: z.number().min(0).optional().describe("Start time on the timeline (default 0)"),
+    bars: z.number().min(1).optional().describe("Clip length in bars of 4 beats (default 2)"),
+  },
+  async ({ trackId, startSec, bars }) => {
+    const result = await bridge.command("addMidiClip", { trackId, startSec, bars });
+    return json(result);
+  },
+);
+
+server.tool(
+  "place_note",
+  "Place a MIDI note in a clip. Pitch is a MIDI note number (60 = middle C). startBeats is the " +
+    "position in quarter-note beats from the clip start. Returns the note id.",
+  {
+    trackId: z.string().describe("The instrument track id"),
+    clipId: z.string().describe("The MIDI clip id"),
+    pitch: z.number().int().min(0).max(127).describe("MIDI note number (60 = middle C / C4)"),
+    startBeats: z.number().min(0).describe("Start position in beats from the clip start"),
+    durationBeats: z.number().min(0.25).optional().describe("Note length in beats (default 1)"),
+    velocity: z.number().min(0).max(1).optional().describe("Velocity 0..1 (default 0.8)"),
+  },
+  async ({ trackId, clipId, pitch, startBeats, durationBeats, velocity }) => {
+    const result = await bridge.command("placeNote", {
+      trackId,
+      clipId,
+      pitch,
+      startBeats,
+      durationBeats,
+      velocity,
+    });
+    return json(result);
+  },
+);
+
+server.tool(
+  "remove_note",
+  "Remove a note from a MIDI clip.",
+  {
+    trackId: z.string().describe("The instrument track id"),
+    clipId: z.string().describe("The MIDI clip id"),
+    noteId: z.string().describe("The note id"),
+  },
+  async ({ trackId, clipId, noteId }) => {
+    await bridge.command("removeNote", { trackId, clipId, noteId });
+    return json({ ok: true, trackId, clipId, noteId });
+  },
+);
+
+server.tool(
   "arm_track",
   "Arm or disarm a track for recording (the Rec button records onto the armed track).",
   {

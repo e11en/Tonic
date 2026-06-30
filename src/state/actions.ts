@@ -45,11 +45,12 @@ export function loadProjectIntoStore(project: Project): void {
 /** Add a new track and return its id. */
 export function addTrack(opts?: { name?: string; kind?: TrackKind }): string {
   const id = nanoid();
+  const kind = opts?.kind ?? "audio";
   tonicStore.setState((s) => {
     const idx = s.project.tracks.length;
     s.project.tracks.push({
       id,
-      kind: opts?.kind ?? "audio",
+      kind,
       name: opts?.name ?? `Track ${idx + 1}`,
       color: TRACK_COLORS[idx % TRACK_COLORS.length],
       volumeDb: 0,
@@ -59,6 +60,8 @@ export function addTrack(opts?: { name?: string; kind?: TrackKind }): string {
       armed: false,
       clips: [],
       effects: [],
+      // Instrument tracks get a default synth so they make sound immediately.
+      instrument: kind === "instrument" ? { type: "synth" } : undefined,
     });
   });
   return id;
@@ -187,6 +190,81 @@ export function removeClip(trackId: string, clipId: string): void {
   tonicStore.setState((s) => {
     const track = s.project.tracks.find((t) => t.id === trackId);
     if (track) track.clips = track.clips.filter((c) => c.id !== clipId);
+  });
+}
+
+// ---- MIDI clips & notes ----
+
+/** Add an empty MIDI clip to a track. Length is `bars` (4 beats each) at the current tempo. */
+export function addMidiClip(trackId: string, startSec = 0, bars = 2): string {
+  const id = nanoid();
+  let created = false;
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    if (!track) return;
+    const secPerBeat = 60 / s.project.tempo;
+    track.clips.push({
+      id,
+      startSec: Math.max(0, startSec),
+      durationSec: bars * 4 * secPerBeat,
+      midi: { notes: [] },
+    });
+    created = true;
+  });
+  return created ? id : "";
+}
+
+function findMidiClip(s: { project: Project }, trackId: string, clipId: string) {
+  const track = s.project.tracks.find((t) => t.id === trackId);
+  const clip = track?.clips.find((c) => c.id === clipId);
+  return clip?.midi ? clip : undefined;
+}
+
+/** Place a note in a MIDI clip. Returns the note id (or "" if the clip is missing). */
+export function placeNote(
+  trackId: string,
+  clipId: string,
+  opts: { pitch: number; startBeats: number; durationBeats?: number; velocity?: number },
+): string {
+  const id = nanoid();
+  let created = false;
+  tonicStore.setState((s) => {
+    const clip = findMidiClip(s, trackId, clipId);
+    if (!clip?.midi) return;
+    clip.midi.notes.push({
+      id,
+      pitch: Math.round(opts.pitch),
+      startBeats: Math.max(0, opts.startBeats),
+      durationBeats: opts.durationBeats ?? 1,
+      velocity: opts.velocity ?? 0.8,
+    });
+    created = true;
+  });
+  return created ? id : "";
+}
+
+/** Remove a note from a MIDI clip. */
+export function removeNote(trackId: string, clipId: string, noteId: string): void {
+  tonicStore.setState((s) => {
+    const clip = findMidiClip(s, trackId, clipId);
+    if (clip?.midi) clip.midi.notes = clip.midi.notes.filter((n) => n.id !== noteId);
+  });
+}
+
+/** Update a note's pitch / position / length. */
+export function updateNote(
+  trackId: string,
+  clipId: string,
+  noteId: string,
+  patch: { pitch?: number; startBeats?: number; durationBeats?: number },
+): void {
+  tonicStore.setState((s) => {
+    const clip = findMidiClip(s, trackId, clipId);
+    const note = clip?.midi?.notes.find((n) => n.id === noteId);
+    if (!note) return;
+    if (patch.pitch !== undefined) note.pitch = Math.round(patch.pitch);
+    if (patch.startBeats !== undefined) note.startBeats = Math.max(0, patch.startBeats);
+    if (patch.durationBeats !== undefined) note.durationBeats = Math.max(0.25, patch.durationBeats);
   });
 }
 
@@ -320,6 +398,28 @@ export function dispatch<A extends BridgeAction>(
     }
     case "clearLoopRegion": {
       clearLoopRegion();
+      return {};
+    }
+    case "addMidiClip": {
+      const a = args as ActionPayloads["addMidiClip"];
+      const clipId = addMidiClip(a.trackId, a.startSec, a.bars);
+      if (!clipId) throw new Error("addMidiClip failed: unknown track id");
+      return { clipId };
+    }
+    case "placeNote": {
+      const a = args as ActionPayloads["placeNote"];
+      const noteId = placeNote(a.trackId, a.clipId, a);
+      if (!noteId) throw new Error("placeNote failed: unknown track/clip id");
+      return { noteId };
+    }
+    case "removeNote": {
+      const a = args as ActionPayloads["removeNote"];
+      removeNote(a.trackId, a.clipId, a.noteId);
+      return {};
+    }
+    case "updateNote": {
+      const a = args as ActionPayloads["updateNote"];
+      updateNote(a.trackId, a.clipId, a.noteId, a);
       return {};
     }
     case "setTempo": {

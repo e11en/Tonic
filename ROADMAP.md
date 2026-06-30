@@ -37,9 +37,10 @@ distinctive and riskiest part — proving it early validates the whole spine.
   new sample + clip; loop region engages the transport loop; arm/loop MCP tools via harness. Live
   mic capture needs real hardware + permission (wired, not auto-tested).
 
-- [ ] **Phase 5 — Instruments & piano roll**
-  Instrument track (PolySynth/Sampler), piano-roll editor producing MIDI clips scheduled via
-  Tone.Part. MCP `place_note`.
+- [x] **Phase 5 — Instruments & piano roll** ✅ *complete*
+  Instrument track (Tone.PolySynth), piano-roll editor producing MIDI clips scheduled via
+  Tone.Part. MCP `place_note`. Verified: instrument track + MIDI clip + notes → Play → audible
+  synth melody (−16 dB); piano roll renders/edits notes; MCP add_midi_clip/place_note/remove_note.
 
 - [ ] **Phase 6 — Drum machine**
   Step sequencer (Tone.Sequence) with drum-kit samples; pattern clips.
