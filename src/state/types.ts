@@ -25,8 +25,12 @@ export interface Note {
   velocity: number; // 0..1
 }
 
+/** Built-in synthesized drum voices (the default kit needs no samples). */
+export type DrumVoice = "kick" | "snare" | "hihat" | "clap" | "tom";
+
 export interface DrumLane {
-  sampleId: ID;
+  voice: DrumVoice;
+  sampleId?: ID; // optional custom sample (overrides the synth voice)
   hits: boolean[]; // length === steps
 }
 

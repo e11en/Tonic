@@ -28,6 +28,8 @@ export type BridgeAction =
   | "placeNote"
   | "removeNote"
   | "updateNote"
+  | "addDrumTrack"
+  | "setStep"
   | "setTempo"
   | "play"
   | "record"

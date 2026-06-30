@@ -10,7 +10,7 @@
  */
 import { nanoid } from "nanoid";
 import { tonicStore } from "./store";
-import type { Clip, Project, SampleMeta, TrackKind } from "./types";
+import type { Clip, DrumVoice, Project, SampleMeta, TrackKind } from "./types";
 import type { ActionPayloads, BridgeAction } from "@shared/protocol";
 
 /** Track strip colors, cycled by index (matches the SoundBlocks palette tokens). */
@@ -251,6 +251,64 @@ export function removeNote(trackId: string, clipId: string, noteId: string): voi
   });
 }
 
+// ---- drum machine ----
+
+const DEFAULT_DRUM_STEPS = 16;
+const DEFAULT_DRUM_LANES: DrumVoice[] = ["kick", "snare", "hihat"];
+
+/** Add a drum track preloaded with an empty 16-step pattern (kick/snare/hihat). Returns track id. */
+export function addDrumTrack(name?: string): string {
+  const trackId = nanoid();
+  const clipId = nanoid();
+  tonicStore.setState((s) => {
+    const idx = s.project.tracks.length;
+    s.project.tracks.push({
+      id: trackId,
+      kind: "drum",
+      name: name ?? "Drums",
+      color: TRACK_COLORS[idx % TRACK_COLORS.length],
+      volumeDb: 0,
+      pan: 0,
+      muted: false,
+      soloed: false,
+      armed: false,
+      clips: [
+        {
+          id: clipId,
+          startSec: 0,
+          durationSec: (60 / s.project.tempo) * DEFAULT_DRUM_STEPS / 4, // 16 steps = 4 beats
+          pattern: {
+            steps: DEFAULT_DRUM_STEPS,
+            lanes: DEFAULT_DRUM_LANES.map((voice) => ({
+              voice,
+              hits: Array(DEFAULT_DRUM_STEPS).fill(false),
+            })),
+          },
+        },
+      ],
+      effects: [],
+      drumKit: { laneSamples: [] },
+    });
+  });
+  return trackId;
+}
+
+/** Toggle / set a step in a drum pattern lane. */
+export function setStep(
+  trackId: string,
+  clipId: string,
+  laneIndex: number,
+  step: number,
+  on: boolean,
+): void {
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    const clip = track?.clips.find((c) => c.id === clipId);
+    const lane = clip?.pattern?.lanes[laneIndex];
+    if (lane && step >= 0 && step < lane.hits.length) lane.hits[step] = on;
+  });
+}
+
 /** Update a note's pitch / position / length. */
 export function updateNote(
   trackId: string,
@@ -420,6 +478,15 @@ export function dispatch<A extends BridgeAction>(
     case "updateNote": {
       const a = args as ActionPayloads["updateNote"];
       updateNote(a.trackId, a.clipId, a.noteId, a);
+      return {};
+    }
+    case "addDrumTrack": {
+      const a = args as ActionPayloads["addDrumTrack"];
+      return { trackId: addDrumTrack(a.name) };
+    }
+    case "setStep": {
+      const a = args as ActionPayloads["setStep"];
+      setStep(a.trackId, a.clipId, a.laneIndex, a.step, a.on);
       return {};
     }
     case "setTempo": {

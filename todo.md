@@ -3,40 +3,38 @@
 > See `ROADMAP.md` for all phases. This file holds only the **current** phase, written out as
 > concrete steps. When the phase is done, empty this file and refill with the next phase.
 
-## Phase 5 — Instruments & piano roll
+## Phase 6 — Drum machine
 
-**Goal:** instrument tracks that play synthesized notes; a piano-roll editor to place MIDI notes;
-notes scheduled via Tone.Part. MCP `place_note`.
+**Goal:** a step sequencer with a built-in synthesized drum kit (no uploads needed). Pattern clips
+loop on a drum track. MCP can toggle steps.
 
 **Status:** in progress.
 
 ### State / actions
-- [ ] `addTrack` sets a default `InstrumentConfig` when kind is "instrument"
-- [ ] `addMidiClip(trackId, startSec, bars?)` → clip with `midi:{notes:[]}`
-- [ ] `placeNote(trackId, clipId, {pitch, startBeats, durationBeats?, velocity?})` → note id
-- [ ] `removeNote(trackId, clipId, noteId)`, `updateNote(...)` (move/resize)
-- [ ] protocol + dispatch for `addMidiClip`, `placeNote`, `removeNote`, `updateNote`
+- [ ] `addDrumTrack()` → drum track + a default 16-step pattern clip (kick/snare/hihat lanes)
+- [ ] `toggleStep(trackId, clipId, laneIndex, step)`, `setStep(...)`
+- [ ] protocol + dispatch for `addDrumTrack`, `setStep`
 
-### Engine — instrument playback
-- [ ] Per instrument track: a `Tone.PolySynth` connected to the track channel (create/dispose)
-- [ ] Per MIDI clip: a `Tone.Part` of note events, `start(clip.startSec)`, beats→seconds via tempo;
-      diff by id + signature (notes/tempo/start) → rebuild on change, dispose on removal
-- [ ] Verify sound via output meter
+### Engine — drum playback
+- [ ] Synthesized voices per drum track (kick=MembraneSynth, snare/clap/hihat=Noise/MetalSynth),
+      connected to the track channel; create/dispose with the track
+- [ ] Per pattern clip: a looping `Tone.Sequence` over the steps, firing the voices whose hit is set;
+      diff by id + signature (pattern/tempo) → rebuild on edit, dispose on removal
+- [ ] Verify audible via the output meter
 
-### UI — piano roll
-- [ ] Rail ⌨ opens the piano roll for a selected MIDI clip
-- [ ] Grid: ~2 octaves × beats; click empty cell → place note, click note → remove
-- [ ] "Add instrument" affordance (adds an instrument track); double-click an instrument lane to
-      add a MIDI clip and open the roll
+### UI — step sequencer
+- [ ] DrumMachine grid (lanes × steps); click a step to toggle; lane labels; beat grouping
+- [ ] Reuse the clip editor slot: pattern clips open the DrumMachine, MIDI clips open the PianoRoll
+- [ ] "+ Add drums" affordance
 
 ### MCP
-- [ ] `add_midi_clip`, `place_note`, `remove_note` (instrument tracks via add_track kind:"instrument")
+- [ ] `add_drum_track`, `set_step` (and pattern visible in get_project)
 
 ### Verification
 - [ ] `npm run typecheck` (app + mcp) + `npm run build` pass
-- [ ] Browser: add instrument track → MIDI clip → place notes in the roll → Play → audible synth
-- [ ] MCP harness: add_track(instrument) + add_midi_clip + place_note → notes appear + play
+- [ ] Browser: add drums → toggle steps → Play → audible beat
+- [ ] MCP harness: add_drum_track + set_step → pattern updates + plays
 - [ ] Commit + push (submodule + pointer)
 
 ### When done
-- [ ] Mark Phase 5 complete in `ROADMAP.md`, empty this file, refill with Phase 6 steps
+- [ ] Mark Phase 6 complete in `ROADMAP.md`, empty this file, refill with Phase 7 steps

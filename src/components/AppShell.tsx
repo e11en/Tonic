@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button, Fader, Knob, LED, Panel, Toggle, Help } from "@/ui";
-import { useTonic } from "@/state/store";
+import { useTonic, tonicStore } from "@/state/store";
 import {
   addTrack,
   removeTrack,
@@ -15,6 +15,7 @@ import {
   setLoopRegion,
   clearLoopRegion,
   addMidiClip,
+  addDrumTrack,
   play,
   stop,
 } from "@/state/actions";
@@ -23,6 +24,7 @@ import { startRecording, stopRecording, isRecording } from "@/audio/recorder";
 import { ClipBlock } from "./ClipBlock";
 import { SampleBrowser } from "./SampleBrowser";
 import { PianoRoll } from "./PianoRoll";
+import { DrumMachine } from "./DrumMachine";
 import "./shell.css";
 
 const dbFmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} dB`;
@@ -91,6 +93,14 @@ export function AppShell() {
 
   const addMidiClipAndEdit = (trackId: string) => {
     const clipId = addMidiClip(trackId, 0, 2);
+    if (clipId) setEditorClip({ trackId, clipId });
+  };
+
+  const addDrums = () => {
+    const trackId = addDrumTrack();
+    // The drum track is created with one pattern clip — open it in the editor.
+    const track = tonicStore.getState().project.tracks.find((t) => t.id === trackId);
+    const clipId = track?.clips[0]?.id;
     if (clipId) setEditorClip({ trackId, clipId });
   };
 
@@ -263,11 +273,17 @@ export function AppShell() {
                         label={
                           c.audio
                             ? samples[c.audio.sampleId]?.name ?? "clip"
-                            : `♪ ${c.midi?.notes.length ?? 0}`
+                            : c.pattern
+                              ? "▦ beat"
+                              : `♪ ${c.midi?.notes.length ?? 0}`
                         }
                         color={t.color}
                         pxPerSec={PX_PER_SEC}
-                        onOpen={c.midi ? () => setEditorClip({ trackId: t.id, clipId: c.id }) : undefined}
+                        onOpen={
+                          c.midi || c.pattern
+                            ? () => setEditorClip({ trackId: t.id, clipId: c.id })
+                            : undefined
+                        }
                       />
                     ))}
                   </div>
@@ -280,17 +296,34 @@ export function AppShell() {
                 <Button variant="ghost" onClick={addInstrument}>
                   + Add instrument
                 </Button>
+                <Button variant="ghost" onClick={addDrums}>
+                  + Add drums
+                </Button>
               </div>
             </div>
           </Panel>
 
-          {editorClip && (
-            <PianoRoll
-              trackId={editorClip.trackId}
-              clipId={editorClip.clipId}
-              onClose={() => setEditorClip(null)}
-            />
-          )}
+          {editorClip &&
+            (() => {
+              const track = tracks.find((t) => t.id === editorClip.trackId);
+              const clip = track?.clips.find((c) => c.id === editorClip.clipId);
+              if (clip?.pattern) {
+                return (
+                  <DrumMachine
+                    trackId={editorClip.trackId}
+                    clipId={editorClip.clipId}
+                    onClose={() => setEditorClip(null)}
+                  />
+                );
+              }
+              return (
+                <PianoRoll
+                  trackId={editorClip.trackId}
+                  clipId={editorClip.clipId}
+                  onClose={() => setEditorClip(null)}
+                />
+              );
+            })()}
         </main>
       </div>
 

@@ -283,6 +283,34 @@ server.tool(
 );
 
 server.tool(
+  "add_drum_track",
+  "Add a drum track with an empty 16-step pattern (kick/snare/hi-hat lanes). Returns the track id; " +
+    "the pattern clip is the track's first clip. Use set_step to program the beat.",
+  { name: z.string().optional().describe("Track name (default 'Drums')") },
+  async ({ name }) => {
+    const result = await bridge.command("addDrumTrack", { name });
+    return json(result);
+  },
+);
+
+server.tool(
+  "set_step",
+  "Toggle a step in a drum pattern. laneIndex 0=kick, 1=snare, 2=hi-hat (default kit); step is " +
+    "0-based (0..15). Get the clipId from get_project (the drum track's first clip).",
+  {
+    trackId: z.string().describe("The drum track id"),
+    clipId: z.string().describe("The pattern clip id"),
+    laneIndex: z.number().int().min(0).describe("Lane index (0=kick, 1=snare, 2=hi-hat)"),
+    step: z.number().int().min(0).describe("Step index, 0-based"),
+    on: z.boolean().describe("true to enable the hit, false to clear it"),
+  },
+  async ({ trackId, clipId, laneIndex, step, on }) => {
+    await bridge.command("setStep", { trackId, clipId, laneIndex, step, on });
+    return json({ ok: true, trackId, clipId, laneIndex, step, on });
+  },
+);
+
+server.tool(
   "arm_track",
   "Arm or disarm a track for recording (the Rec button records onto the armed track).",
   {

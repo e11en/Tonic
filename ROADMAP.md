@@ -42,8 +42,10 @@ distinctive and riskiest part — proving it early validates the whole spine.
   Tone.Part. MCP `place_note`. Verified: instrument track + MIDI clip + notes → Play → audible
   synth melody (−16 dB); piano roll renders/edits notes; MCP add_midi_clip/place_note/remove_note.
 
-- [ ] **Phase 6 — Drum machine**
-  Step sequencer (Tone.Sequence) with drum-kit samples; pattern clips.
+- [x] **Phase 6 — Drum machine** ✅ *complete*
+  Step sequencer (Tone.Sequence) with a built-in synthesized kit (kick/snare/hi-hat/clap/tom);
+  looping pattern clips. Verified: programmed a beat → Play → audible (−12 dB); DrumMachine grid;
+  MCP add_drum_track + set_step (kick [0,8], snare [4] confirmed in the running app).
 
 - [ ] **Phase 7 — Effects**
   Per-track effects rack (EQ3/reverb/delay/distortion/chorus/compressor), chain rewiring in the

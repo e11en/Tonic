@@ -38,6 +38,8 @@ export type BridgeAction =
   | "placeNote"
   | "removeNote"
   | "updateNote"
+  | "addDrumTrack"
+  | "setStep"
   | "setTempo"
   | "play"
   | "record"
@@ -84,6 +86,8 @@ export interface ActionPayloads {
     startBeats?: number;
     durationBeats?: number;
   };
+  addDrumTrack: { name?: string };
+  setStep: { trackId: string; clipId: string; laneIndex: number; step: number; on: boolean };
   setTempo: { bpm: number };
   play: Record<string, never>;
   record: Record<string, never>;

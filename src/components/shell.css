@@ -319,6 +319,50 @@
   background: color-mix(in srgb, var(--accent, #4aa3ff) 40%, var(--surface));
 }
 
+/* ---- drum machine ---- */
+.tn-drum {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tn-drum__lane {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tn-drum__label {
+  width: 56px;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  text-align: right;
+  flex: 0 0 56px;
+}
+.tn-drum__steps {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.tn-drum__step {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-sunken, var(--surface-2));
+  cursor: pointer;
+  padding: 0;
+}
+.tn-drum__step.is-beat {
+  border-color: color-mix(in srgb, var(--accent, #4aa3ff) 50%, var(--border));
+}
+.tn-drum__step.is-on {
+  background: var(--accent, #4aa3ff);
+  border-color: transparent;
+  box-shadow: var(--bevel);
+}
+.tn-drum__step:hover {
+  background: color-mix(in srgb, var(--accent, #4aa3ff) 35%, var(--surface));
+}
+
 .tn-loop-band {
   position: absolute;
   top: 0;

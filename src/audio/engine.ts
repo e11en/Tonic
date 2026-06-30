@@ -17,6 +17,7 @@
 import * as Tone from "tone";
 import { tonicStore } from "@/state/store";
 import { loadSampleBlob } from "@/persistence/db";
+import { createDrumKit, type DrumKitNodes } from "@/audio/drums";
 import type { Project } from "@/state/types";
 
 const RAMP_SEC = 0.03;
@@ -40,6 +41,11 @@ interface PartEntry {
   sig: string;
 }
 
+interface SequenceEntry {
+  seq: Tone.Sequence<number>;
+  sig: string;
+}
+
 class AudioEngine {
   private channels = new Map<string, Tone.Channel>();
   private buffers = new Map<string, Tone.ToneAudioBuffer>();
@@ -47,6 +53,8 @@ class AudioEngine {
   private players = new Map<string, PlayerEntry>(); // keyed by clip id
   private instruments = new Map<string, Tone.PolySynth>(); // keyed by track id
   private parts = new Map<string, PartEntry>(); // keyed by clip id
+  private drumKits = new Map<string, DrumKitNodes>(); // keyed by track id
+  private sequences = new Map<string, SequenceEntry>(); // keyed by clip id
   private unsubscribe?: () => void;
   private started = false;
   private booted = false;
@@ -199,15 +207,27 @@ class AudioEngine {
         this.instruments.get(track.id)!.dispose();
         this.instruments.delete(track.id);
       }
+
+      // Drum tracks get a synthesized kit feeding the channel.
+      if (track.kind === "drum") {
+        if (!this.drumKits.has(track.id)) {
+          this.drumKits.set(track.id, createDrumKit(channel));
+        }
+      } else if (this.drumKits.has(track.id)) {
+        this.drumKits.get(track.id)!.dispose();
+        this.drumKits.delete(track.id);
+      }
     }
 
-    // Dispose channels (+ instruments) for tracks that no longer exist.
+    // Dispose channels (+ instruments + drum kits) for tracks that no longer exist.
     for (const [id, channel] of this.channels) {
       if (!seen.has(id)) {
         channel.dispose();
         this.channels.delete(id);
         this.instruments.get(id)?.dispose();
         this.instruments.delete(id);
+        this.drumKits.get(id)?.dispose();
+        this.drumKits.delete(id);
       }
     }
 
@@ -218,6 +238,7 @@ class AudioEngine {
   private reconcileClips(project: Project): void {
     const seenPlayers = new Set<string>();
     const seenParts = new Set<string>();
+    const seenSeqs = new Set<string>();
     const secPerBeat = 60 / project.tempo;
 
     for (const track of project.tracks) {
@@ -276,6 +297,29 @@ class AudioEngine {
           }, events);
           part.start(clip.startSec);
           this.parts.set(clip.id, { part, sig });
+        } else if (clip.pattern) {
+          const kit = this.drumKits.get(track.id);
+          if (!kit) continue; // only drum tracks play patterns
+          seenSeqs.add(clip.id);
+
+          const pattern = clip.pattern;
+          const sig = [track.id, clip.startSec, pattern.steps, JSON.stringify(pattern.lanes)].join("|");
+          const existing = this.sequences.get(clip.id);
+          if (existing && existing.sig === sig) continue;
+          existing?.seq.dispose();
+
+          const steps = Array.from({ length: pattern.steps }, (_, i) => i);
+          const seq = new Tone.Sequence<number>(
+            (time, step) => {
+              for (const lane of pattern.lanes) {
+                if (lane.hits[step]) kit.trigger(lane.voice, time);
+              }
+            },
+            steps,
+            "16n",
+          );
+          seq.start(clip.startSec); // loops every bar by default
+          this.sequences.set(clip.id, { seq, sig });
         }
       }
     }
@@ -293,6 +337,12 @@ class AudioEngine {
         this.parts.delete(clipId);
       }
     }
+    for (const [clipId, entry] of this.sequences) {
+      if (!seenSeqs.has(clipId)) {
+        entry.seq.dispose();
+        this.sequences.delete(clipId);
+      }
+    }
   }
 
   /** Tear down (not used in app lifetime; handy for tests/HMR). */
@@ -304,6 +354,10 @@ class AudioEngine {
     this.parts.clear();
     for (const synth of this.instruments.values()) synth.dispose();
     this.instruments.clear();
+    for (const entry of this.sequences.values()) entry.seq.dispose();
+    this.sequences.clear();
+    for (const kit of this.drumKits.values()) kit.dispose();
+    this.drumKits.clear();
     for (const channel of this.channels.values()) channel.dispose();
     this.channels.clear();
     for (const buffer of this.buffers.values()) buffer.dispose();
