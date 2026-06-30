@@ -28,6 +28,9 @@ export type BridgeAction =
   | "setTrackMute"
   | "setTrackSolo"
   | "setMasterVolume"
+  | "addClip"
+  | "moveClip"
+  | "removeClip"
   | "setTempo"
   | "play"
   | "stop";
@@ -42,6 +45,16 @@ export interface ActionPayloads {
   setTrackMute: { trackId: string; muted: boolean };
   setTrackSolo: { trackId: string; soloed: boolean };
   setMasterVolume: { volumeDb: number };
+  addClip: {
+    trackId: string;
+    sampleId: string;
+    startSec?: number;
+    durationSec?: number;
+    offsetSec?: number;
+    gainDb?: number;
+  };
+  moveClip: { trackId: string; clipId: string; startSec: number };
+  removeClip: { trackId: string; clipId: string };
   setTempo: { bpm: number };
   play: Record<string, never>;
   stop: Record<string, never>;

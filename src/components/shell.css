@@ -43,10 +43,23 @@
 
 /* ---- body: rail + arrangement ---- */
 .tn-body {
-  display: grid;
-  grid-template-columns: 56px 1fr;
+  display: flex;
   min-height: 0;
   overflow: hidden;
+}
+.tn-rail {
+  flex: 0 0 56px;
+}
+.tn-sidebar {
+  flex: 0 0 260px;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-3) 0 var(--space-3) var(--space-3);
+  border-right: 1px solid var(--border);
+}
+.tn-rail__btn.is-active {
+  background: var(--accent, #4aa3ff);
+  color: #fff;
 }
 .tn-rail {
   background: var(--bg-rail);
@@ -74,12 +87,117 @@
 }
 
 .tn-arrange {
+  flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+/* ---- timeline clips ---- */
+.tn-clip {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--track-color, var(--accent)) 32%, var(--surface));
+  border: 1px solid var(--track-color, var(--accent));
+  box-shadow: var(--bevel);
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+.tn-clip:active {
+  cursor: grabbing;
+}
+.tn-clip__label {
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* ---- sample browser ---- */
+.tn-samples {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.tn-samples__target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tn-samples__target select {
+  flex: 1;
+  font-family: inherit;
+  font-size: var(--fs-label);
+  padding: 4px 6px;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.tn-samples__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tn-samples__empty {
+  padding: var(--space-2) 0;
+}
+.tn-samples__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-button);
+  background: var(--surface-sunken, var(--surface));
+  border: 1px solid var(--border);
+}
+.tn-samples__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tn-samples__name {
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tn-samples__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tn-samples__del {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  line-height: 1;
+}
+.tn-samples__del:hover {
+  background: var(--track-4, #e5534b);
+  color: #fff;
+  border-color: transparent;
 }
 
 /* keep the mixer from growing taller than its content needs */

@@ -25,9 +25,11 @@ distinctive and riskiest part — proving it early validates the whole spine.
   IndexedDB autosave/load. Verified: UI mixer + reload-restores-state in-browser; new MCP tools
   (set_track_pan, mute_track, solo_track, set_master_volume, rename_track, remove_track) via harness.
 
-- [ ] **Phase 3 — Samples & playback**
+- [x] **Phase 3 — Samples & playback** ✅ *complete*
   Upload wav/mp3 → decode → IndexedDB + cache. Audio clips on the timeline (Tone.Player), drag to
-  move. Sample browser. MCP `add_clip`.
+  move. Sample browser. MCP `add_clip`. Verified: imported a sample, placed a clip, pressed Play
+  and measured master output (−20 dB, audible) — audio survives a full reload (buffer re-decoded
+  from IndexedDB). MCP list_samples/add_clip/move_clip/remove_clip via harness.
 
 - [ ] **Phase 4 — Recording**
   Microphone recording (getUserMedia) onto an armed track; loop region + loop record; recordings

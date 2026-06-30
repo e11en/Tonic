@@ -59,6 +59,17 @@ server.tool(
   },
 );
 
+server.tool(
+  "list_samples",
+  "List the audio samples available in the current Tonic project (id, name, duration). " +
+    "Samples are uploaded in the app UI; reference their ids when adding clips.",
+  async () => {
+    const snapshot = bridge.getSnapshot();
+    const samples = snapshot ? Object.values(snapshot.samples ?? {}) : [];
+    return json({ count: samples.length, samples });
+  },
+);
+
 // ---- Write tools (send a command to the running app, await its ack) ----
 
 server.tool(
@@ -171,6 +182,49 @@ server.tool(
   async ({ bpm }) => {
     await bridge.command("setTempo", { bpm });
     return json({ ok: true, bpm });
+  },
+);
+
+server.tool(
+  "add_clip",
+  "Place an audio clip (referencing an uploaded sample) on a track's timeline. " +
+    "Use list_samples for sample ids and list_tracks for track ids. Returns the new clip id.",
+  {
+    trackId: z.string().describe("The track id"),
+    sampleId: z.string().describe("The sample id (from list_samples)"),
+    startSec: z.number().min(0).optional().describe("Start time on the timeline in seconds (default 0)"),
+    durationSec: z.number().min(0).optional().describe("Clip length in seconds (default: full sample)"),
+  },
+  async ({ trackId, sampleId, startSec, durationSec }) => {
+    const result = await bridge.command("addClip", { trackId, sampleId, startSec, durationSec });
+    return json(result);
+  },
+);
+
+server.tool(
+  "move_clip",
+  "Move a clip to a new start time (seconds) on its track.",
+  {
+    trackId: z.string().describe("The track id"),
+    clipId: z.string().describe("The clip id"),
+    startSec: z.number().min(0).describe("New start time in seconds"),
+  },
+  async ({ trackId, clipId, startSec }) => {
+    await bridge.command("moveClip", { trackId, clipId, startSec });
+    return json({ ok: true, trackId, clipId, startSec });
+  },
+);
+
+server.tool(
+  "remove_clip",
+  "Remove a clip from a track.",
+  {
+    trackId: z.string().describe("The track id"),
+    clipId: z.string().describe("The clip id"),
+  },
+  async ({ trackId, clipId }) => {
+    await bridge.command("removeClip", { trackId, clipId });
+    return json({ ok: true, trackId, clipId });
   },
 );
 

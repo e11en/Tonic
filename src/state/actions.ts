@@ -10,7 +10,7 @@
  */
 import { nanoid } from "nanoid";
 import { tonicStore } from "./store";
-import type { Project, TrackKind } from "./types";
+import type { Clip, Project, SampleMeta, TrackKind } from "./types";
 import type { ActionPayloads, BridgeAction } from "@shared/protocol";
 
 /** Track strip colors, cycled by index (matches the SoundBlocks palette tokens). */
@@ -118,6 +118,78 @@ export function setMasterVolume(volumeDb: number): void {
   });
 }
 
+// ---- samples & clips ----
+
+/** Register a sample's metadata. The blob + decoded buffer live outside the store. */
+export function addSample(meta: SampleMeta): void {
+  tonicStore.setState((s) => {
+    s.project.samples[meta.id] = meta;
+  });
+}
+
+/** Remove a sample's metadata and any clips that reference it. */
+export function removeSample(sampleId: string): void {
+  tonicStore.setState((s) => {
+    delete s.project.samples[sampleId];
+    for (const track of s.project.tracks) {
+      track.clips = track.clips.filter((c) => c.audio?.sampleId !== sampleId);
+    }
+  });
+}
+
+/**
+ * Add an audio clip referencing a sample to a track. Duration defaults to the sample's
+ * full length. Returns the new clip id (or "" if the track/sample is missing).
+ */
+export function addClip(
+  trackId: string,
+  opts: {
+    sampleId: string;
+    startSec?: number;
+    durationSec?: number;
+    offsetSec?: number;
+    gainDb?: number;
+  },
+): string {
+  const id = nanoid();
+  let created = false;
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    const sample = s.project.samples[opts.sampleId];
+    if (!track || !sample) return;
+    const clip: Clip = {
+      id,
+      startSec: Math.max(0, opts.startSec ?? 0),
+      durationSec: opts.durationSec ?? sample.durationSec,
+      audio: {
+        sampleId: opts.sampleId,
+        offsetSec: opts.offsetSec ?? 0,
+        gainDb: opts.gainDb ?? 0,
+      },
+    };
+    track.clips.push(clip);
+    created = true;
+  });
+  return created ? id : "";
+}
+
+/** Move a clip to a new start time (seconds, clamped to >= 0). */
+export function moveClip(trackId: string, clipId: string, startSec: number): void {
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    const clip = track?.clips.find((c) => c.id === clipId);
+    if (clip) clip.startSec = Math.max(0, startSec);
+  });
+}
+
+/** Remove a clip from a track. */
+export function removeClip(trackId: string, clipId: string): void {
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    if (track) track.clips = track.clips.filter((c) => c.id !== clipId);
+  });
+}
+
 /** Set the project tempo in BPM (clamped to a musical range). */
 export function setTempo(bpm: number): void {
   tonicStore.setState((s) => {
@@ -187,6 +259,22 @@ export function dispatch<A extends BridgeAction>(
     case "setMasterVolume": {
       const a = args as ActionPayloads["setMasterVolume"];
       setMasterVolume(a.volumeDb);
+      return {};
+    }
+    case "addClip": {
+      const a = args as ActionPayloads["addClip"];
+      const clipId = addClip(a.trackId, a);
+      if (!clipId) throw new Error("addClip failed: unknown track or sample id");
+      return { clipId };
+    }
+    case "moveClip": {
+      const a = args as ActionPayloads["moveClip"];
+      moveClip(a.trackId, a.clipId, a.startSec);
+      return {};
+    }
+    case "removeClip": {
+      const a = args as ActionPayloads["removeClip"];
+      removeClip(a.trackId, a.clipId);
       return {};
     }
     case "setTempo": {

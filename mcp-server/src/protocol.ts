@@ -18,6 +18,9 @@ export type BridgeAction =
   | "setTrackMute"
   | "setTrackSolo"
   | "setMasterVolume"
+  | "addClip"
+  | "moveClip"
+  | "removeClip"
   | "setTempo"
   | "play"
   | "stop";

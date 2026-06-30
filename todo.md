@@ -3,42 +3,46 @@
 > See `ROADMAP.md` for all phases. This file holds only the **current** phase, written out as
 > concrete steps. When the phase is done, empty this file and refill with the next phase.
 
-## Phase 2 — Tracks, mixer, persistence
+## Phase 3 — Samples & playback
 
-**Goal:** a real multi-track mixer (volume/pan/mute/solo + master) all bound through `actions.ts`,
-plus local-first persistence so a project survives a reload.
+**Goal:** upload audio, see clips on a timeline, and actually hear them play through the mixer.
+First phase that produces sound.
 
 **Status:** in progress.
 
-### Actions (extend the single mutation layer)
-- [ ] `setTrackPan`, `setTrackMute`, `setTrackSolo`, `renameTrack`, `removeTrack`
-- [ ] `setMasterVolume`
-- [ ] Extend `dispatch()` + protocol `BridgeAction`/`ActionPayloads` for the new ones
+### State / actions
+- [ ] `addSample(meta)`, `removeSample(id)` (store holds only `SampleMeta`)
+- [ ] `addClip(trackId, {sampleId, startSec, durationSec?, offsetSec?, gainDb?})` → returns clip id
+      (duration defaults to the sample's duration)
+- [ ] `moveClip(trackId, clipId, startSec)`, `removeClip(trackId, clipId)`
+- [ ] Extend `dispatch()` + protocol for `addClip`, `moveClip`, `removeClip`
 
-### Engine
-- [ ] Respect solo: if any track soloed, only soloed tracks sound (others effectively muted)
-- [ ] Master volume already reconciled — confirm
+### Sample pipeline (`src/audio/samples.ts`)
+- [ ] `importSampleFile(file)`: decode via AudioContext, cache the Tone buffer in the engine,
+      save the blob to IndexedDB, `addSample(meta)`; return sample id
 
-### Mixer UI
-- [ ] Wire master fader → `setMasterVolume`; per-track pan/mute/solo → actions
-- [ ] Track header: rename (double-click) + remove (×) affordance
-- [ ] Reflect soloed state visually (LED/strip)
+### Engine — clip playback
+- [ ] Buffer cache keyed by sample id; `cacheBuffer` + lazy `loadSampleBuffer` (from IndexedDB)
+      that re-reconciles when a buffer finishes loading (so restored projects play)
+- [ ] Per-clip `Tone.Player` connected to the track channel, `sync().start(startSec, offsetSec)`;
+      diff clips by id + a signature (sampleId/start/offset/duration) → rebuild on change, dispose
+      on removal
 
-### Persistence (`src/persistence/db.ts`)
-- [ ] `idb` wrapper: open DB `tonic`, store `projects` (key = project id)
-- [ ] `saveProject(project)` / `loadProject(id)` / `loadLastProject()`
-- [ ] Autosave: subscribe to store, debounce ~500ms, write current project
-- [ ] On boot: load last project into the store before first paint (or hydrate + reconcile)
+### UI
+- [ ] Rail buttons select an active side panel; 📁 opens a Sample browser
+- [ ] Sample browser: upload (wav/mp3) + list (name, duration); "add to track" affordance
+- [ ] Timeline: render clips as positioned blocks in the lane strip (px/sec scale), drag
+      horizontally to move (→ `moveClip`), double-click to remove
 
 ### MCP
-- [ ] New tools: `set_track_pan`, `mute_track`, `solo_track`, `rename_track`, `remove_track`,
-      `set_master_volume`
+- [ ] `list_samples`, `add_clip` (trackId, sampleId, startSec), `remove_clip`
+- [ ] (uploading binary audio stays a UI action — note this in tool descriptions)
 
 ### Verification
 - [ ] `npm run typecheck` (app + mcp) + `npm run build` pass
-- [ ] Browser: add tracks, move faders/pan, mute/solo, reload page → state restored
-- [ ] MCP harness: new tools mutate the running app
+- [ ] Browser: upload a sample → clip appears → Play → audible; drag clip; reload → restored + plays
+- [ ] MCP harness: `add_clip` against an uploaded sample shows + plays
 - [ ] Commit + push (submodule + pointer)
 
 ### When done
-- [ ] Mark Phase 2 complete in `ROADMAP.md`, empty this file, refill with Phase 3 steps
+- [ ] Mark Phase 3 complete in `ROADMAP.md`, empty this file, refill with Phase 4 steps
