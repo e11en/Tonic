@@ -10,7 +10,8 @@
  */
 import { nanoid } from "nanoid";
 import { tonicStore } from "./store";
-import type { Clip, DrumVoice, Project, SampleMeta, TrackKind } from "./types";
+import { defaultParams } from "@/audio/effects";
+import type { Clip, DrumVoice, EffectType, Project, SampleMeta, TrackKind } from "./types";
 import type { ActionPayloads, BridgeAction } from "@shared/protocol";
 
 /** Track strip colors, cycled by index (matches the SoundBlocks palette tokens). */
@@ -190,6 +191,54 @@ export function removeClip(trackId: string, clipId: string): void {
   tonicStore.setState((s) => {
     const track = s.project.tracks.find((t) => t.id === trackId);
     if (track) track.clips = track.clips.filter((c) => c.id !== clipId);
+  });
+}
+
+// ---- effects ----
+
+/** Add an effect of `type` to a track's rack (enabled, default params). Returns the effect id. */
+export function addEffect(trackId: string, type: EffectType): string {
+  const id = nanoid();
+  let created = false;
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    if (!track) return;
+    track.effects.push({ id, type, enabled: true, params: defaultParams(type) });
+    created = true;
+  });
+  return created ? id : "";
+}
+
+/** Remove an effect from a track. */
+export function removeEffect(trackId: string, effectId: string): void {
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    if (track) track.effects = track.effects.filter((e) => e.id !== effectId);
+  });
+}
+
+/** Enable / bypass an effect. */
+export function setEffectEnabled(trackId: string, effectId: string, enabled: boolean): void {
+  tonicStore.setState((s) => {
+    const effect = s.project.tracks
+      .find((t) => t.id === trackId)
+      ?.effects.find((e) => e.id === effectId);
+    if (effect) effect.enabled = enabled;
+  });
+}
+
+/** Set one parameter of an effect. */
+export function setEffectParam(
+  trackId: string,
+  effectId: string,
+  param: string,
+  value: number,
+): void {
+  tonicStore.setState((s) => {
+    const effect = s.project.tracks
+      .find((t) => t.id === trackId)
+      ?.effects.find((e) => e.id === effectId);
+    if (effect) effect.params[param] = value;
   });
 }
 
@@ -487,6 +536,27 @@ export function dispatch<A extends BridgeAction>(
     case "setStep": {
       const a = args as ActionPayloads["setStep"];
       setStep(a.trackId, a.clipId, a.laneIndex, a.step, a.on);
+      return {};
+    }
+    case "addEffect": {
+      const a = args as ActionPayloads["addEffect"];
+      const effectId = addEffect(a.trackId, a.type);
+      if (!effectId) throw new Error("addEffect failed: unknown track id");
+      return { effectId };
+    }
+    case "removeEffect": {
+      const a = args as ActionPayloads["removeEffect"];
+      removeEffect(a.trackId, a.effectId);
+      return {};
+    }
+    case "setEffectEnabled": {
+      const a = args as ActionPayloads["setEffectEnabled"];
+      setEffectEnabled(a.trackId, a.effectId, a.enabled);
+      return {};
+    }
+    case "setEffectParam": {
+      const a = args as ActionPayloads["setEffectParam"];
+      setEffectParam(a.trackId, a.effectId, a.param, a.value);
       return {};
     }
     case "setTempo": {

@@ -311,6 +311,63 @@ server.tool(
 );
 
 server.tool(
+  "add_effect",
+  "Add an effect to a track's rack. Inserts into the signal chain (input → effects → fader). " +
+    "Returns the effect id; tune it with set_effect_param.",
+  {
+    trackId: z.string().describe("The track id"),
+    type: z
+      .enum(["eq3", "reverb", "delay", "distortion", "chorus", "compressor"])
+      .describe("Effect type"),
+  },
+  async ({ trackId, type }) => {
+    const result = await bridge.command("addEffect", { trackId, type });
+    return json(result);
+  },
+);
+
+server.tool(
+  "remove_effect",
+  "Remove an effect from a track's rack.",
+  { trackId: z.string().describe("The track id"), effectId: z.string().describe("The effect id") },
+  async ({ trackId, effectId }) => {
+    await bridge.command("removeEffect", { trackId, effectId });
+    return json({ ok: true, trackId, effectId });
+  },
+);
+
+server.tool(
+  "set_effect_enabled",
+  "Enable or bypass an effect on a track.",
+  {
+    trackId: z.string().describe("The track id"),
+    effectId: z.string().describe("The effect id"),
+    enabled: z.boolean().describe("true to enable, false to bypass"),
+  },
+  async ({ trackId, effectId, enabled }) => {
+    await bridge.command("setEffectEnabled", { trackId, effectId, enabled });
+    return json({ ok: true, trackId, effectId, enabled });
+  },
+);
+
+server.tool(
+  "set_effect_param",
+  "Set one parameter of an effect. Param names by type — eq3: low/mid/high (dB); reverb: decay/wet; " +
+    "delay: delayTime/feedback/wet; distortion: distortion/wet; chorus: frequency/depth/wet; " +
+    "compressor: threshold/ratio. See get_project for current values.",
+  {
+    trackId: z.string().describe("The track id"),
+    effectId: z.string().describe("The effect id"),
+    param: z.string().describe("Parameter name (see description)"),
+    value: z.number().describe("New value"),
+  },
+  async ({ trackId, effectId, param, value }) => {
+    await bridge.command("setEffectParam", { trackId, effectId, param, value });
+    return json({ ok: true, trackId, effectId, param, value });
+  },
+);
+
+server.tool(
   "arm_track",
   "Arm or disarm a track for recording (the Rec button records onto the armed track).",
   {

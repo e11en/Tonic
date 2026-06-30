@@ -319,6 +319,82 @@
   background: color-mix(in srgb, var(--accent, #4aa3ff) 40%, var(--surface));
 }
 
+/* ---- effects rack ---- */
+.tn-fx-overlay {
+  position: fixed;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  width: 360px;
+  max-height: 70vh;
+  overflow: auto;
+  z-index: 20;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+  border-radius: var(--radius-card);
+}
+.tn-fx__add {
+  display: flex;
+  gap: 8px;
+}
+.tn-fx__add select {
+  flex: 1;
+  font-family: inherit;
+  font-size: var(--fs-label);
+  padding: 4px 6px;
+  border-radius: var(--radius-button);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.tn-fx__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.tn-fx__unit {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-button);
+  padding: var(--space-2);
+  background: var(--surface-sunken, var(--surface-2));
+}
+.tn-fx__unit.is-bypassed {
+  opacity: 0.55;
+}
+.tn-fx__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: var(--space-2);
+}
+.tn-fx__name {
+  flex: 1;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  font-size: var(--fs-label);
+  letter-spacing: 0.05em;
+}
+.tn-fx__del {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-button);
+  cursor: pointer;
+  line-height: 1;
+}
+.tn-fx__del:hover {
+  background: var(--track-4, #e5534b);
+  color: #fff;
+  border-color: transparent;
+}
+.tn-fx__knobs {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* ---- drum machine ---- */
 .tn-drum {
   display: flex;

@@ -25,6 +25,7 @@ import { ClipBlock } from "./ClipBlock";
 import { SampleBrowser } from "./SampleBrowser";
 import { PianoRoll } from "./PianoRoll";
 import { DrumMachine } from "./DrumMachine";
+import { EffectsRack } from "./EffectsRack";
 import "./shell.css";
 
 const dbFmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} dB`;
@@ -45,6 +46,7 @@ export function AppShell() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [sidePanel, setSidePanel] = useState<SidePanel>("samples");
   const [editorClip, setEditorClip] = useState<{ trackId: string; clipId: string } | null>(null);
+  const [fxTrack, setFxTrack] = useState<string | null>(null);
 
   // Store-bound state (single source of truth).
   const tempo = useTonic((s) => s.project.tempo);
@@ -366,9 +368,22 @@ export function AppShell() {
               <Toggle checked={t.muted} onChange={(v) => setTrackMute(t.id, v)} label="M" />
               <Toggle checked={t.soloed} onChange={(v) => setTrackSolo(t.id, v)} label="S" />
             </div>
+            <Button
+              variant={fxTrack === t.id ? "primary" : "ghost"}
+              onClick={() => setFxTrack((cur) => (cur === t.id ? null : t.id))}
+              title="Effects rack"
+            >
+              FX{t.effects.length ? ` ${t.effects.length}` : ""}
+            </Button>
           </div>
         ))}
       </section>
+
+      {fxTrack && (
+        <div className="tn-fx-overlay">
+          <EffectsRack trackId={fxTrack} onClose={() => setFxTrack(null)} />
+        </div>
+      )}
     </div>
   );
 }

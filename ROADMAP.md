@@ -47,9 +47,11 @@ distinctive and riskiest part — proving it early validates the whole spine.
   looping pattern clips. Verified: programmed a beat → Play → audible (−12 dB); DrumMachine grid;
   MCP add_drum_track + set_step (kick [0,8], snare [4] confirmed in the running app).
 
-- [ ] **Phase 7 — Effects**
+- [x] **Phase 7 — Effects** ✅ *complete*
   Per-track effects rack (EQ3/reverb/delay/distortion/chorus/compressor), chain rewiring in the
-  reconciler, MCP `add_effect` / `set_effect_param`.
+  reconciler (per-track input bus → effects → channel; rebuild on structural change, live params),
+  MCP `add_effect` / `set_effect_param`. Verified: beat through distortion+reverb stays audible
+  (chain rewired live); EffectsRack UI with knobs; MCP add/param/enable/remove via harness.
 
 - [ ] **Phase 8 — Web MIDI**
   Web MIDI API input → play instruments live and record into the piano roll.

@@ -13,7 +13,7 @@
  * Keep the two in sync — they are the actual wire contract.
  */
 
-import type { Project, TrackKind } from "@/state/types";
+import type { EffectType, Project, TrackKind } from "@/state/types";
 
 export const WS_DEFAULT_PORT = 8765;
 export const WS_URL = `ws://127.0.0.1:${WS_DEFAULT_PORT}`;
@@ -40,6 +40,10 @@ export type BridgeAction =
   | "updateNote"
   | "addDrumTrack"
   | "setStep"
+  | "addEffect"
+  | "removeEffect"
+  | "setEffectEnabled"
+  | "setEffectParam"
   | "setTempo"
   | "play"
   | "record"
@@ -88,6 +92,10 @@ export interface ActionPayloads {
   };
   addDrumTrack: { name?: string };
   setStep: { trackId: string; clipId: string; laneIndex: number; step: number; on: boolean };
+  addEffect: { trackId: string; type: EffectType };
+  removeEffect: { trackId: string; effectId: string };
+  setEffectEnabled: { trackId: string; effectId: string; enabled: boolean };
+  setEffectParam: { trackId: string; effectId: string; param: string; value: number };
   setTempo: { bpm: number };
   play: Record<string, never>;
   record: Record<string, never>;

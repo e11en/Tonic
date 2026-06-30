@@ -18,7 +18,8 @@ import * as Tone from "tone";
 import { tonicStore } from "@/state/store";
 import { loadSampleBlob } from "@/persistence/db";
 import { createDrumKit, type DrumKitNodes } from "@/audio/drums";
-import type { Project } from "@/state/types";
+import { createEffectNode, applyParams } from "@/audio/effects";
+import type { Project, Track } from "@/state/types";
 
 const RAMP_SEC = 0.03;
 
@@ -46,8 +47,15 @@ interface SequenceEntry {
   sig: string;
 }
 
+interface EffectChainEntry {
+  structSig: string;
+  nodes: Map<string, Tone.ToneAudioNode>; // keyed by effect id, only enabled effects
+}
+
 class AudioEngine {
   private channels = new Map<string, Tone.Channel>();
+  private inputs = new Map<string, Tone.Gain>(); // per-track effects-chain input bus
+  private effectChains = new Map<string, EffectChainEntry>();
   private buffers = new Map<string, Tone.ToneAudioBuffer>();
   private loadingBuffers = new Set<string>();
   private players = new Map<string, PlayerEntry>(); // keyed by clip id
@@ -197,10 +205,18 @@ class AudioEngine {
       // Effective mute = explicit mute OR (something is soloed and this track isn't).
       channel.mute = track.muted || (anySoloed && !track.soloed);
 
-      // Instrument tracks get a PolySynth feeding the channel.
+      // Per-track input bus: all sources feed this, then the effects chain, then the channel.
+      let input = this.inputs.get(track.id);
+      if (!input) {
+        input = new Tone.Gain();
+        this.inputs.set(track.id, input);
+      }
+      this.reconcileEffects(track, input, channel);
+
+      // Instrument tracks get a PolySynth feeding the input bus.
       if (track.kind === "instrument") {
         if (!this.instruments.has(track.id)) {
-          const synth = new Tone.PolySynth(Tone.Synth).connect(channel);
+          const synth = new Tone.PolySynth(Tone.Synth).connect(input);
           this.instruments.set(track.id, synth);
         }
       } else if (this.instruments.has(track.id)) {
@@ -208,10 +224,10 @@ class AudioEngine {
         this.instruments.delete(track.id);
       }
 
-      // Drum tracks get a synthesized kit feeding the channel.
+      // Drum tracks get a synthesized kit feeding the input bus.
       if (track.kind === "drum") {
         if (!this.drumKits.has(track.id)) {
-          this.drumKits.set(track.id, createDrumKit(channel));
+          this.drumKits.set(track.id, createDrumKit(input));
         }
       } else if (this.drumKits.has(track.id)) {
         this.drumKits.get(track.id)!.dispose();
@@ -219,11 +235,15 @@ class AudioEngine {
       }
     }
 
-    // Dispose channels (+ instruments + drum kits) for tracks that no longer exist.
+    // Dispose channels (+ inputs + effects + instruments + drum kits) for removed tracks.
     for (const [id, channel] of this.channels) {
       if (!seen.has(id)) {
         channel.dispose();
         this.channels.delete(id);
+        this.inputs.get(id)?.dispose();
+        this.inputs.delete(id);
+        this.effectChains.get(id)?.nodes.forEach((n) => n.dispose());
+        this.effectChains.delete(id);
         this.instruments.get(id)?.dispose();
         this.instruments.delete(id);
         this.drumKits.get(id)?.dispose();
@@ -234,6 +254,35 @@ class AudioEngine {
     this.reconcileClips(project);
   }
 
+  /**
+   * Wire a track's effect chain: input → [enabled effects] → channel. Rebuild only on a
+   * structural change (which effects, their order, enabled state); apply param edits live.
+   */
+  private reconcileEffects(track: Track, input: Tone.Gain, channel: Tone.Channel): void {
+    const enabled = track.effects.filter((e) => e.enabled);
+    const structSig = enabled.map((e) => `${e.id}:${e.type}`).join(",");
+    const existing = this.effectChains.get(track.id);
+
+    if (!existing || existing.structSig !== structSig) {
+      // Rebuild the chain.
+      input.disconnect();
+      existing?.nodes.forEach((n) => n.dispose());
+      const nodes = new Map<string, Tone.ToneAudioNode>();
+      for (const effect of enabled) nodes.set(effect.id, createEffectNode(effect));
+      // input → e1 → e2 → ... → channel
+      input.chain(...enabled.map((e) => nodes.get(e.id)!), channel);
+      for (const effect of enabled) applyParams(nodes.get(effect.id)!, effect);
+      this.effectChains.set(track.id, { structSig, nodes });
+      return;
+    }
+
+    // Structure unchanged — apply live param edits in place.
+    for (const effect of enabled) {
+      const node = existing.nodes.get(effect.id);
+      if (node) applyParams(node, effect);
+    }
+  }
+
   /** Build/update/dispose per-clip audio Players and MIDI Parts, synced to the transport. */
   private reconcileClips(project: Project): void {
     const seenPlayers = new Set<string>();
@@ -242,8 +291,8 @@ class AudioEngine {
     const secPerBeat = 60 / project.tempo;
 
     for (const track of project.tracks) {
-      const channel = this.channels.get(track.id);
-      if (!channel) continue;
+      const input = this.inputs.get(track.id);
+      if (!input) continue;
 
       for (const clip of track.clips) {
         if (clip.audio) {
@@ -264,7 +313,7 @@ class AudioEngine {
           const existing = this.players.get(clip.id);
           if (existing && existing.sig === sig) continue;
           existing?.player.dispose();
-          const player = new Tone.Player(buffer).connect(channel);
+          const player = new Tone.Player(buffer).connect(input);
           player.volume.value = clip.audio.gainDb;
           player.sync().start(clip.startSec, clip.audio.offsetSec, clip.durationSec);
           this.players.set(clip.id, { player, sig });
@@ -358,6 +407,10 @@ class AudioEngine {
     this.sequences.clear();
     for (const kit of this.drumKits.values()) kit.dispose();
     this.drumKits.clear();
+    for (const entry of this.effectChains.values()) entry.nodes.forEach((n) => n.dispose());
+    this.effectChains.clear();
+    for (const input of this.inputs.values()) input.dispose();
+    this.inputs.clear();
     for (const channel of this.channels.values()) channel.dispose();
     this.channels.clear();
     for (const buffer of this.buffers.values()) buffer.dispose();
