@@ -39,9 +39,12 @@
 - [x] `npm run typecheck` passes (app + mcp-server)
 - [x] `npm run build` produces a bundle
 - [x] MCP `ping` returns `"tonic alive"` over the stdio protocol
-- [ ] Restart Claude Code → `tonic` MCP server loads and `ping` is callable
-- [ ] Browser visual check via the Claude-in-Chrome extension (design system renders)
-- [ ] Commit + push Phase 0 in the Tonic submodule; commit submodule pointer in home-workspace
+- [x] Browser visual check via the Claude-in-Chrome extension — design system renders, theme
+      toggle / Play-Stop / Help popover all work, no console errors
+- [x] Commit + push Phase 0 in the Tonic submodule; commit submodule pointer in home-workspace
+- [ ] Restart Claude Code → `tonic` MCP server loads and `ping` is callable **in-session**
+      (the server itself is verified working via the SDK client; the in-session reload needs a
+      Claude Code restart, which the user performs)
 
 ### When done
 - [ ] Mark Phase 0 complete in `ROADMAP.md`, empty this file, refill with Phase 1 steps
