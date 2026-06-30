@@ -227,6 +227,24 @@
   font-weight: var(--fw-medium);
   cursor: text;
 }
+.tn-lane__arm {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim, var(--text));
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 12px;
+}
+.tn-lane__arm.is-armed {
+  background: var(--track-4, #e5534b);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 0 6px var(--track-4, #e5534b);
+}
 .tn-lane__remove {
   appearance: none;
   border: 1px solid var(--border);
@@ -238,6 +256,16 @@
   cursor: pointer;
   line-height: 1;
   font-size: 16px;
+}
+.tn-loop-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: color-mix(in srgb, var(--accent, #4aa3ff) 18%, transparent);
+  border-left: 2px solid var(--accent, #4aa3ff);
+  border-right: 2px solid var(--accent, #4aa3ff);
+  pointer-events: none;
+  z-index: 0;
 }
 .tn-lane__remove:hover {
   background: var(--track-4, #e5534b);

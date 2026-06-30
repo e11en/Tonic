@@ -20,16 +20,19 @@ void initPersistence();
 
 // Dev-only debug handle for manual/automated verification in the browser console.
 if (import.meta.env.DEV) {
-  void Promise.all([import("@/state/actions"), import("@/audio/samples")]).then(
-    ([actions, samples]) => {
-      (window as unknown as Record<string, unknown>).__tonic = {
-        engine: audioEngine,
-        store: tonicStore,
-        actions,
-        importSampleFile: samples.importSampleFile,
-      };
-    },
-  );
+  void Promise.all([
+    import("@/state/actions"),
+    import("@/audio/samples"),
+    import("@/audio/recorder"),
+  ]).then(([actions, samples, recorder]) => {
+    (window as unknown as Record<string, unknown>).__tonic = {
+      engine: audioEngine,
+      store: tonicStore,
+      actions,
+      importSampleFile: samples.importSampleFile,
+      recorder,
+    };
+  });
 }
 
 createRoot(document.getElementById("root")!).render(

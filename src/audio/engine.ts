@@ -53,7 +53,7 @@ class AudioEngine {
     // Master bus: every track channel feeds this, then a meter (for level
     // measurement), then the speakers. Inline so the meter sees real signal.
     this.master = new Tone.Channel();
-    this.meter = new Tone.Meter({ channels: 1 });
+    this.meter = new Tone.Meter();
     this.master.chain(this.meter, Tone.getDestination());
     this.unsubscribe = tonicStore.subscribe(
       (s) => s.project,
@@ -87,14 +87,21 @@ class AudioEngine {
     started: boolean;
     contextState: string;
     transportState: string;
+    loop: boolean;
+    loopStart: number;
+    loopEnd: number;
     channels: number;
     players: number;
     buffers: number;
   } {
+    const transport = Tone.getTransport();
     return {
       started: this.started,
       contextState: Tone.getContext().state,
-      transportState: Tone.getTransport().state,
+      transportState: transport.state,
+      loop: transport.loop,
+      loopStart: Number(transport.loopStart),
+      loopEnd: Number(transport.loopEnd),
       channels: this.channels.size,
       players: this.players.size,
       buffers: this.buffers.size,
@@ -134,10 +141,21 @@ class AudioEngine {
     transport.bpm.rampTo(project.tempo, RAMP_SEC);
     this.master?.volume.rampTo(project.masterVolumeDb, RAMP_SEC);
 
-    // Transport play/stop. Only the audio context being live lets this make sound.
-    if (project.transport.state === "playing" && transport.state !== "started") {
+    // Loop region.
+    const loop = project.transport.loop;
+    if (loop) {
+      transport.loop = true;
+      transport.loopStart = loop.startSec;
+      transport.loopEnd = loop.endSec;
+    } else {
+      transport.loop = false;
+    }
+
+    // Transport run/stop. "playing" and "recording" both run the clock.
+    const running = project.transport.state === "playing" || project.transport.state === "recording";
+    if (running && transport.state !== "started") {
       transport.start();
-    } else if (project.transport.state !== "playing" && transport.state === "started") {
+    } else if (!running && transport.state === "started") {
       transport.stop();
     }
 

@@ -197,10 +197,41 @@ export function setTempo(bpm: number): void {
   });
 }
 
+/** Arm / disarm a track for recording. */
+export function armTrack(trackId: string, armed: boolean): void {
+  tonicStore.setState((s) => {
+    const track = s.project.tracks.find((t) => t.id === trackId);
+    if (track) track.armed = armed;
+  });
+}
+
+/** Set the transport loop region (seconds). */
+export function setLoopRegion(startSec: number, endSec: number): void {
+  tonicStore.setState((s) => {
+    const a = Math.max(0, Math.min(startSec, endSec));
+    const b = Math.max(startSec, endSec);
+    s.project.transport.loop = { startSec: a, endSec: b };
+  });
+}
+
+/** Clear the transport loop region. */
+export function clearLoopRegion(): void {
+  tonicStore.setState((s) => {
+    s.project.transport.loop = null;
+  });
+}
+
 /** Start the transport. */
 export function play(): void {
   tonicStore.setState((s) => {
     s.project.transport.state = "playing";
+  });
+}
+
+/** Put the transport into recording state (mic capture is orchestrated by the recorder). */
+export function record(): void {
+  tonicStore.setState((s) => {
+    s.project.transport.state = "recording";
   });
 }
 
@@ -277,6 +308,20 @@ export function dispatch<A extends BridgeAction>(
       removeClip(a.trackId, a.clipId);
       return {};
     }
+    case "armTrack": {
+      const a = args as ActionPayloads["armTrack"];
+      armTrack(a.trackId, a.armed);
+      return {};
+    }
+    case "setLoopRegion": {
+      const a = args as ActionPayloads["setLoopRegion"];
+      setLoopRegion(a.startSec, a.endSec);
+      return {};
+    }
+    case "clearLoopRegion": {
+      clearLoopRegion();
+      return {};
+    }
     case "setTempo": {
       const a = args as ActionPayloads["setTempo"];
       setTempo(a.bpm);
@@ -284,6 +329,9 @@ export function dispatch<A extends BridgeAction>(
     }
     case "play":
       play();
+      return {};
+    case "record":
+      record();
       return {};
     case "stop":
       stop();

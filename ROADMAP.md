@@ -31,9 +31,11 @@ distinctive and riskiest part — proving it early validates the whole spine.
   and measured master output (−20 dB, audible) — audio survives a full reload (buffer re-decoded
   from IndexedDB). MCP list_samples/add_clip/move_clip/remove_clip via harness.
 
-- [ ] **Phase 4 — Recording**
-  Microphone recording (getUserMedia) onto an armed track; loop region + loop record; recordings
-  become samples + clips.
+- [x] **Phase 4 — Recording** ✅ *complete*
+  Microphone recording (Tone.UserMedia + Tone.Recorder) onto an armed track; loop region; recordings
+  become samples + clips. Verified: recordingToClip (post-capture pipeline) with a synthetic blob →
+  new sample + clip; loop region engages the transport loop; arm/loop MCP tools via harness. Live
+  mic capture needs real hardware + permission (wired, not auto-tested).
 
 - [ ] **Phase 5 — Instruments & piano roll**
   Instrument track (PolySynth/Sampler), piano-roll editor producing MIDI clips scheduled via

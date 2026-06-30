@@ -31,8 +31,12 @@ export type BridgeAction =
   | "addClip"
   | "moveClip"
   | "removeClip"
+  | "armTrack"
+  | "setLoopRegion"
+  | "clearLoopRegion"
   | "setTempo"
   | "play"
+  | "record"
   | "stop";
 
 /** Argument shape per action — keeps the UI, the bridge, and `dispatch` honest. */
@@ -55,8 +59,12 @@ export interface ActionPayloads {
   };
   moveClip: { trackId: string; clipId: string; startSec: number };
   removeClip: { trackId: string; clipId: string };
+  armTrack: { trackId: string; armed: boolean };
+  setLoopRegion: { startSec: number; endSec: number };
+  clearLoopRegion: Record<string, never>;
   setTempo: { bpm: number };
   play: Record<string, never>;
+  record: Record<string, never>;
   stop: Record<string, never>;
 }
 

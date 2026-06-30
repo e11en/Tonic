@@ -21,8 +21,12 @@ export type BridgeAction =
   | "addClip"
   | "moveClip"
   | "removeClip"
+  | "armTrack"
+  | "setLoopRegion"
+  | "clearLoopRegion"
   | "setTempo"
   | "play"
+  | "record"
   | "stop";
 
 export interface CommandMessage {

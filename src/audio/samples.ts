@@ -20,28 +20,41 @@ export function isAudioFile(file: File): boolean {
   return file.type.startsWith("audio/") || AUDIO_EXT.test(file.name);
 }
 
-/** Import one audio file. Returns the new sample id, or null on failure. */
-export async function importSampleFile(file: File): Promise<string | null> {
+/**
+ * Decode an audio blob, cache its buffer in the engine, persist the blob to IndexedDB,
+ * and register its SampleMeta. Returns the new sample id, or null on failure.
+ * Shared by file upload and microphone recording.
+ */
+export async function importAudioBlob(
+  blob: Blob,
+  name: string,
+  source: SampleMeta["source"] = "upload",
+): Promise<string | null> {
   try {
     const id = nanoid();
-    const arrayBuffer = await file.arrayBuffer();
+    const arrayBuffer = await blob.arrayBuffer();
     // decodeAudioData detaches the buffer, so decode from a copy and keep the blob.
     const buffer = await decodeToToneBuffer(arrayBuffer.slice(0));
 
     audioEngine.cacheBuffer(id, buffer);
-    await saveSampleBlob(id, file);
+    await saveSampleBlob(id, blob);
 
     const meta: SampleMeta = {
       id,
-      name: file.name,
-      source: "upload",
+      name,
+      source,
       durationSec: buffer.duration,
       channels: buffer.numberOfChannels,
     };
     addSample(meta);
     return id;
   } catch (err) {
-    console.error("[tonic] sample import failed:", file.name, err);
+    console.error("[tonic] sample import failed:", name, err);
     return null;
   }
+}
+
+/** Import one audio file. Returns the new sample id, or null on failure. */
+export function importSampleFile(file: File): Promise<string | null> {
+  return importAudioBlob(file, file.name, "upload");
 }

@@ -5,16 +5,20 @@ import {
   addTrack,
   removeTrack,
   renameTrack,
+  armTrack,
   setTempo,
   setTrackVolume,
   setTrackPan,
   setTrackMute,
   setTrackSolo,
   setMasterVolume,
+  setLoopRegion,
+  clearLoopRegion,
   play,
   stop,
 } from "@/state/actions";
 import { audioEngine } from "@/audio/engine";
+import { startRecording, stopRecording, isRecording } from "@/audio/recorder";
 import { ClipBlock } from "./ClipBlock";
 import { SampleBrowser } from "./SampleBrowser";
 import "./shell.css";
@@ -43,8 +47,38 @@ export function AppShell() {
   const tracks = useTonic((s) => s.project.tracks);
   const samples = useTonic((s) => s.project.samples);
   const masterVolume = useTonic((s) => s.project.masterVolumeDb);
+  const transportState = useTonic((s) => s.project.transport.state);
+  const loop = useTonic((s) => s.project.transport.loop);
+  const recording = transportState === "recording";
 
   const togglePanel = (p: SidePanel) => setSidePanel((cur) => (cur === p ? null : p));
+
+  const toggleRecord = async () => {
+    if (isRecording()) {
+      await stopRecording();
+      return;
+    }
+    // Record onto the first armed track; if none, arm the first track.
+    let target = tracks.find((t) => t.armed)?.id;
+    if (!target) {
+      target = tracks[0]?.id;
+      if (target) armTrack(target, true);
+    }
+    if (!target) {
+      window.alert("Add a track first, then record onto it.");
+      return;
+    }
+    try {
+      await startRecording(target, 0);
+    } catch {
+      window.alert("Could not access the microphone. Check the browser's mic permission.");
+    }
+  };
+
+  const toggleLoop = () => {
+    if (loop) clearLoopRegion();
+    else setLoopRegion(0, 4); // default 4-second loop region
+  };
 
   const promptRename = (id: string, current: string) => {
     const name = window.prompt("Track name", current);
@@ -77,7 +111,21 @@ export function AppShell() {
           <Button variant={playing ? "neutral" : "primary"} onClick={togglePlay}>
             {playing ? "■ Stop" : "▶ Play"}
           </Button>
-          <LED state={playing ? "blink" : "off"} title="Transport" />
+          <Button
+            variant={recording ? "neutral" : "ghost"}
+            onClick={() => void toggleRecord()}
+            title="Record from microphone onto the armed track"
+          >
+            {recording ? "■ Stop rec" : "● Rec"}
+          </Button>
+          <Button
+            variant={loop ? "primary" : "ghost"}
+            onClick={toggleLoop}
+            title="Toggle a loop region"
+          >
+            ↻ Loop
+          </Button>
+          <LED state={recording ? "warn" : playing ? "blink" : "off"} title="Transport" />
         </div>
 
         <div className="tn-transport__group">
@@ -157,6 +205,13 @@ export function AppShell() {
                       {t.name}
                     </span>
                     <button
+                      className={`tn-lane__arm${t.armed ? " is-armed" : ""}`}
+                      title={t.armed ? "Armed for recording" : "Arm for recording"}
+                      onClick={() => armTrack(t.id, !t.armed)}
+                    >
+                      ●
+                    </button>
+                    <button
                       className="tn-lane__remove"
                       title="Remove track"
                       onClick={() => removeTrack(t.id)}
@@ -165,6 +220,15 @@ export function AppShell() {
                     </button>
                   </div>
                   <div className="tn-lane__strip">
+                    {loop && (
+                      <div
+                        className="tn-loop-band"
+                        style={{
+                          left: loop.startSec * PX_PER_SEC,
+                          width: (loop.endSec - loop.startSec) * PX_PER_SEC,
+                        }}
+                      />
+                    )}
                     {t.clips.length === 0 && !t.muted && (
                       <div className="tn-lane__wave" style={{ ["--track-color" as string]: t.color }} />
                     )}

@@ -229,6 +229,41 @@ server.tool(
 );
 
 server.tool(
+  "arm_track",
+  "Arm or disarm a track for recording (the Rec button records onto the armed track).",
+  {
+    trackId: z.string().describe("The track id"),
+    armed: z.boolean().describe("true to arm, false to disarm"),
+  },
+  async ({ trackId, armed }) => {
+    await bridge.command("armTrack", { trackId, armed });
+    return json({ ok: true, trackId, armed });
+  },
+);
+
+server.tool(
+  "set_loop_region",
+  "Set the transport loop region in seconds (playback loops between start and end).",
+  {
+    startSec: z.number().min(0).describe("Loop start in seconds"),
+    endSec: z.number().min(0).describe("Loop end in seconds"),
+  },
+  async ({ startSec, endSec }) => {
+    await bridge.command("setLoopRegion", { startSec, endSec });
+    return json({ ok: true, startSec, endSec });
+  },
+);
+
+server.tool(
+  "clear_loop_region",
+  "Clear the transport loop region (stop looping).",
+  async () => {
+    await bridge.command("clearLoopRegion", {});
+    return json({ ok: true });
+  },
+);
+
+server.tool(
   "play",
   "Start the transport (play) on the running Tonic project.",
   async () => {
