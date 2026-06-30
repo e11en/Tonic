@@ -1,47 +1,39 @@
 import { useState } from "react";
 import { Button, Fader, Knob, LED, Panel, Toggle, Help } from "@/ui";
+import { useTonic } from "@/state/store";
+import { addTrack, setTempo, setTrackVolume, play, stop } from "@/state/actions";
+import { audioEngine } from "@/audio/engine";
 import "./shell.css";
 
-interface DemoTrack {
-  id: string;
-  name: string;
-  color: string;
-  volumeDb: number;
-  pan: number;
-  muted: boolean;
-  soloed: boolean;
-}
-
-const INITIAL_TRACKS: DemoTrack[] = [
-  { id: "t1", name: "Drums", color: "var(--track-1)", volumeDb: -6, pan: 0, muted: false, soloed: false },
-  { id: "t2", name: "Bass", color: "var(--track-2)", volumeDb: -8, pan: -0.2, muted: false, soloed: false },
-  { id: "t3", name: "Synth", color: "var(--track-3)", volumeDb: -10, pan: 0.3, muted: false, soloed: false },
-  { id: "t4", name: "Vocals", color: "var(--track-4)", volumeDb: -4, pan: 0, muted: true, soloed: false },
-];
-
 const dbFmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} dB`;
-const panFmt = (v: number) => (Math.abs(v) < 0.02 ? "C" : v < 0 ? `L${Math.round(-v * 100)}` : `R${Math.round(v * 100)}`);
+const panFmt = (v: number) =>
+  Math.abs(v) < 0.02 ? "C" : v < 0 ? `L${Math.round(-v * 100)}` : `R${Math.round(v * 100)}`;
 
 /**
- * Phase 0 static showcase. Controls are wired to local state so the design
- * system is visibly interactive. In Phase 1 these bind to the Zustand store
- * via the shared action layer (used by both the UI and the MCP bridge).
+ * The app shell, bound to the Zustand store via `useTonic` selectors. Every control
+ * mutates through `actions.ts` — the exact same path the MCP bridge uses — so a UI
+ * fader and an MCP `set_track_volume` command change one shared state.
  */
 export function AppShell() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [playing, setPlaying] = useState(false);
-  const [tempo, setTempo] = useState(120);
-  const [master, setMaster] = useState(0);
-  const [tracks, setTracks] = useState(INITIAL_TRACKS);
 
-  const setTheme2 = (dark: boolean) => {
+  // Store-bound state (single source of truth).
+  const tempo = useTonic((s) => s.project.tempo);
+  const playing = useTonic((s) => s.project.transport.state === "playing");
+  const tracks = useTonic((s) => s.project.tracks);
+
+  const setThemeMode = (dark: boolean) => {
     const next = dark ? "dark" : "light";
     setTheme(next);
     document.documentElement.setAttribute("data-theme", next);
   };
 
-  const patch = (id: string, p: Partial<DemoTrack>) =>
-    setTracks((ts) => ts.map((t) => (t.id === id ? { ...t, ...p } : t)));
+  const togglePlay = async () => {
+    // Unlock the AudioContext on this user gesture before starting the transport.
+    await audioEngine.ensureStarted();
+    if (playing) stop();
+    else play();
+  };
 
   return (
     <div className="tn-app">
@@ -53,14 +45,21 @@ export function AppShell() {
         </div>
 
         <div className="tn-transport__group">
-          <Button variant={playing ? "neutral" : "primary"} onClick={() => setPlaying((p) => !p)}>
+          <Button variant={playing ? "neutral" : "primary"} onClick={togglePlay}>
             {playing ? "■ Stop" : "▶ Play"}
           </Button>
           <LED state={playing ? "blink" : "off"} title="Transport" />
         </div>
 
         <div className="tn-transport__group">
-          <Knob value={tempo} min={40} max={240} onChange={(v) => setTempo(Math.round(v))} label="Tempo" format={(v) => `${Math.round(v)} BPM`} />
+          <Knob
+            value={tempo}
+            min={40}
+            max={240}
+            onChange={(v) => setTempo(Math.round(v))}
+            label="Tempo"
+            format={(v) => `${Math.round(v)} BPM`}
+          />
           <Help title="Tempo">
             Tempo is the speed of your song, measured in beats per minute (BPM). Higher = faster.
             Turn the knob (or drag up/down) to change it.
@@ -71,7 +70,7 @@ export function AppShell() {
 
         <div className="tn-transport__group">
           <span className="t-label">Theme</span>
-          <Toggle checked={theme === "dark"} onChange={setTheme2} label={theme} />
+          <Toggle checked={theme === "dark"} onChange={setThemeMode} label={theme} />
         </div>
       </header>
 
@@ -97,6 +96,11 @@ export function AppShell() {
             }
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+              {tracks.length === 0 && (
+                <p className="t-label" style={{ padding: "var(--space-3)" }}>
+                  No tracks yet. Click “+ Add track” to start.
+                </p>
+              )}
               {tracks.map((t) => (
                 <div className="tn-lane" key={t.id}>
                   <div className="tn-lane__head" style={{ ["--track-color" as string]: t.color }}>
@@ -104,10 +108,17 @@ export function AppShell() {
                     <span className="tn-lane__name">{t.name}</span>
                   </div>
                   <div className="tn-lane__strip">
-                    {!t.muted && <div className="tn-lane__wave" style={{ ["--track-color" as string]: t.color }} />}
+                    {!t.muted && (
+                      <div className="tn-lane__wave" style={{ ["--track-color" as string]: t.color }} />
+                    )}
                   </div>
                 </div>
               ))}
+              <div style={{ paddingTop: "var(--space-2)" }}>
+                <Button variant="ghost" onClick={() => addTrack()}>
+                  + Add track
+                </Button>
+              </div>
             </div>
           </Panel>
         </main>
@@ -124,20 +135,28 @@ export function AppShell() {
             </Help>
           </div>
           <Knob value={0} min={-1} max={1} onChange={() => {}} label="Pan" format={panFmt} size={44} />
-          <Fader value={master} onChange={setMaster} format={dbFmt} />
+          <Fader value={0} onChange={() => {}} format={dbFmt} />
           <LED state="on" title="Master" />
         </div>
 
         {tracks.map((t) => (
           <div className="tn-strip" key={t.id}>
-            <div className="tn-strip__name" style={{ color: t.color }}>{t.name}</div>
-            <Knob value={t.pan} min={-1} max={1} onChange={(v) => patch(t.id, { pan: v })} label="Pan" format={panFmt} size={44} />
-            <Fader value={t.volumeDb} onChange={(v) => patch(t.id, { volumeDb: v })} format={dbFmt} />
-            <div className="tn-strip__row">
-              <Toggle checked={t.muted} onChange={(v) => patch(t.id, { muted: v })} label="M" />
-              <Toggle checked={t.soloed} onChange={(v) => patch(t.id, { soloed: v })} label="S" />
+            <div className="tn-strip__name" style={{ color: t.color }}>
+              {t.name}
             </div>
-            <Button variant="ghost" onClick={() => {}}>+ FX</Button>
+            <Knob value={t.pan} min={-1} max={1} onChange={() => {}} label="Pan" format={panFmt} size={44} />
+            <Fader
+              value={t.volumeDb}
+              onChange={(v) => setTrackVolume(t.id, v)}
+              format={dbFmt}
+            />
+            <div className="tn-strip__row">
+              <Toggle checked={t.muted} onChange={() => {}} label="M" />
+              <Toggle checked={t.soloed} onChange={() => {}} label="S" />
+            </div>
+            <Button variant="ghost" onClick={() => {}}>
+              + FX
+            </Button>
           </div>
         ))}
       </section>

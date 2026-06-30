@@ -1,27 +1,58 @@
 /**
  * Wire protocol shared by the browser app and the MCP server's WebSocket bridge.
  *
- * PLACEHOLDER (Phase 0): the bridge is not built yet. These types fix the contract
- * so the `@shared` path alias resolves and Phase 1 can fill in the real messages.
+ * The browser is the WS *client* and the authoritative state owner; the MCP server
+ * runs the WS *server* on 127.0.0.1:8765. Two message directions:
  *
- * Intended Phase 1 shape:
- *   bridge -> browser: { type: "command"; id; action; args }
- *   browser -> bridge: { type: "ack"; id; ok; result?/error? }
- *                      { type: "snapshot"; project }
+ *   bridge  -> browser : CommandMessage   ("please run this action")
+ *   browser -> bridge  : AckMessage       (result/error of a command)
+ *                        SnapshotMessage  (full project, on connect + after every change)
+ *
+ * NOTE: `mcp-server/` has its own tsconfig (`rootDir: src`) and cannot import this file,
+ * so it mirrors the same `type`/`action` string literals in `mcp-server/src/protocol.ts`.
+ * Keep the two in sync — they are the actual wire contract.
  */
 
-import type { Project } from "@/state/types";
+import type { Project, TrackKind } from "@/state/types";
 
 export const WS_DEFAULT_PORT = 8765;
+export const WS_URL = `ws://127.0.0.1:${WS_DEFAULT_PORT}`;
 
-export type BridgeToBrowser = {
+/** Mutating/transport actions the bridge can ask the running app to perform. */
+export type BridgeAction =
+  | "addTrack"
+  | "setTrackVolume"
+  | "setTempo"
+  | "play"
+  | "stop";
+
+/** Argument shape per action — keeps the UI, the bridge, and `dispatch` honest. */
+export interface ActionPayloads {
+  addTrack: { name?: string; kind?: TrackKind };
+  setTrackVolume: { trackId: string; volumeDb: number };
+  setTempo: { bpm: number };
+  play: Record<string, never>;
+  stop: Record<string, never>;
+}
+
+/** bridge -> browser: run this action and ack with the result. */
+export interface CommandMessage<A extends BridgeAction = BridgeAction> {
   type: "command";
   id: string;
-  action: string;
-  args: unknown[];
-};
+  action: A;
+  args: ActionPayloads[A];
+}
 
-export type BrowserToBridge =
+/** browser -> bridge: outcome of a command. */
+export type AckMessage =
   | { type: "ack"; id: string; ok: true; result?: unknown }
-  | { type: "ack"; id: string; ok: false; error: string }
-  | { type: "snapshot"; project: Project };
+  | { type: "ack"; id: string; ok: false; error: string };
+
+/** browser -> bridge: the full current project, sent on connect and after every change. */
+export interface SnapshotMessage {
+  type: "snapshot";
+  project: Project;
+}
+
+export type BridgeToBrowser = CommandMessage;
+export type BrowserToBridge = AckMessage | SnapshotMessage;

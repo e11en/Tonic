@@ -1,6 +1,6 @@
 # Roadmap — Tonic
 
-**Status:** 🟢 Phase 0 in progress · local-first web DAW with a live MCP bridge
+**Status:** 🟢 Phase 1 in progress · local-first web DAW with a live MCP bridge
 
 High-level phases only. When a phase is picked up, its concrete steps are written out in
 `todo.md` (see the documentation workflow in `CLAUDE.md`). The MCP bridge is intentionally pulled
@@ -9,16 +9,18 @@ distinctive and riskiest part — proving it early validates the whole spine.
 
 ---
 
-- [ ] **Phase 0 — Scaffold** 🟢 *in progress*
+- [x] **Phase 0 — Scaffold** ✅ *complete*
   Vite + React + TS app, design tokens (JetBrains Mono, palette, textures), UI shells
   (Knob/Fader/Toggle/Button/Panel/LED/Help), static AppShell, state skeletons, and a ping-only
   MCP stub registered in the root `.mcp.json`.
 
-- [ ] **Phase 1 — Vertical slice + bridge spine**
+- [ ] **Phase 1 — Vertical slice + bridge spine** 🟢 *in progress*
   Zustand store + `actions.ts` (`addTrack`, `setTrackVolume`, `setTempo`, `play`, `stop`). Minimal
   Tone.js engine (Transport + per-track Channel, reconcile-on-subscribe). Transport bar + one
   working track lane/fader. WS bridge in the MCP server + matching tools. **Acceptance:** from
   Claude, add a track and change tempo/volume and see+hear the running browser app react.
+  *Status:* code complete; spine verified end-to-end via an MCP test harness (MCP→app and
+  app→MCP both proven). Remaining: in-session MCP reload after a Claude Code restart.
 
 - [ ] **Phase 2 — Tracks, mixer, persistence**
   Multi-track lane list, full mixer with channel strips (volume/pan/mute/solo) + master strip,
