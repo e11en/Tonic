@@ -53,6 +53,7 @@ export function AppShell() {
   const [sidePanel, setSidePanel] = useState<SidePanel>("samples");
   const [editorClip, setEditorClip] = useState<{ trackId: string; clipId: string } | null>(null);
   const [fxTrack, setFxTrack] = useState<string | null>(null);
+  const [mixerOpen, setMixerOpen] = useState(true);
   const [showWelcome, setShowWelcome] = useState(() => {
     try {
       return localStorage.getItem(ONBOARD_KEY) !== "1";
@@ -192,6 +193,7 @@ export function AppShell() {
             onChange={(v) => setTempo(Math.round(v))}
             label="Tempo"
             format={(v) => `${Math.round(v)} BPM`}
+            size={38}
           />
           <Help title="Tempo">
             Tempo is the speed of your song, measured in beats per minute (BPM). Higher = faster.
@@ -379,8 +381,16 @@ export function AppShell() {
         </main>
       </div>
 
-      {/* ---- mixer ---- */}
-      <section className="tn-mixer" aria-label="Mixer">
+      {/* ---- mixer (collapsible bottom dock) ---- */}
+      <section className={`tn-mixer${mixerOpen ? "" : " is-collapsed"}`} aria-label="Mixer">
+        <button
+          className="tn-mixer__toggle"
+          onClick={() => setMixerOpen((o) => !o)}
+          title={mixerOpen ? "Hide mixer" : "Show mixer"}
+        >
+          {mixerOpen ? "▾" : "▸"} Mixer <span className="t-label">· {tracks.length} track{tracks.length === 1 ? "" : "s"}</span>
+        </button>
+        <div className="tn-mixer__strips">
         <div className="tn-strip">
           <div className="tn-strip__name">
             Master
@@ -427,6 +437,7 @@ export function AppShell() {
             </Button>
           </div>
         ))}
+        </div>
       </section>
 
       {fxTrack && (

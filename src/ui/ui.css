@@ -7,13 +7,14 @@
   font-weight: var(--fw-medium);
   border-radius: var(--radius-button);
   border: 1px solid var(--border-strong);
-  padding: 8px 16px;
+  padding: 5px 11px;
   cursor: pointer;
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--bevel), var(--shadow-1);
   transition: transform 0.04s ease, background 0.12s ease;
   user-select: none;
+  white-space: nowrap;
 }
 .tn-btn:active {
   transform: translateY(1px);
@@ -33,9 +34,9 @@
   border-color: var(--border);
 }
 .tn-btn--icon {
-  padding: 8px;
-  width: 36px;
-  height: 36px;
+  padding: 6px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -36,23 +36,23 @@
 
   /* ---- typography ---- */
   --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Menlo", monospace;
-  --fs-display-l: 40px;
-  --fs-display-m: 26px;
-  --fs-body: 15px;
-  --fs-label: 12px;
+  --fs-display-l: 30px;
+  --fs-display-m: 20px;
+  --fs-body: 13px;
+  --fs-label: 11px;
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-bold: 700;
 
-  /* ---- spacing ---- */
-  --space-1: 8px;
-  --space-2: 16px;
-  --space-3: 24px;
-  --space-4: 32px;
+  /* ---- spacing (compact — tuned for laptop screens) ---- */
+  --space-1: 5px;
+  --space-2: 9px;
+  --space-3: 14px;
+  --space-4: 20px;
 
   /* ---- radii ---- */
-  --radius-button: 8px;
-  --radius-card: 16px;
+  --radius-button: 7px;
+  --radius-card: 11px;
   --radius-pill: 999px;
 
   /* ---- elevation (skeuomorphic) ---- */
