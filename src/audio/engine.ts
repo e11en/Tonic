@@ -85,6 +85,23 @@ class AudioEngine {
     );
   }
 
+  /** Trigger an instrument track's synth live (e.g. from a MIDI keyboard). Transient — not state. */
+  noteOn(trackId: string, pitch: number, velocity = 0.8): void {
+    const synth = this.instruments.get(trackId);
+    synth?.triggerAttack(Tone.Frequency(pitch, "midi").toFrequency(), undefined, velocity);
+  }
+
+  /** Release a live-triggered note on an instrument track. */
+  noteOff(trackId: string, pitch: number): void {
+    const synth = this.instruments.get(trackId);
+    synth?.triggerRelease(Tone.Frequency(pitch, "midi").toFrequency());
+  }
+
+  /** Current transport position in seconds (for recording played notes). */
+  transportSeconds(): number {
+    return Tone.getTransport().seconds;
+  }
+
   /** Current master output level in dB (−Infinity when silent). */
   outputLevelDb(): number {
     const v = this.meter?.getValue();

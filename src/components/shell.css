@@ -276,6 +276,13 @@
 }
 
 /* ---- piano roll ---- */
+.tn-roll__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
 .tn-roll {
   display: grid;
   gap: 1px;

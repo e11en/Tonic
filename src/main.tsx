@@ -24,13 +24,15 @@ if (import.meta.env.DEV) {
     import("@/state/actions"),
     import("@/audio/samples"),
     import("@/audio/recorder"),
-  ]).then(([actions, samples, recorder]) => {
+    import("@/audio/webmidi"),
+  ]).then(([actions, samples, recorder, webmidi]) => {
     (window as unknown as Record<string, unknown>).__tonic = {
       engine: audioEngine,
       store: tonicStore,
       actions,
       importSampleFile: samples.importSampleFile,
       recorder,
+      webmidi,
     };
   });
 }

@@ -53,8 +53,10 @@ distinctive and riskiest part — proving it early validates the whole spine.
   MCP `add_effect` / `set_effect_param`. Verified: beat through distortion+reverb stays audible
   (chain rewired live); EffectsRack UI with knobs; MCP add/param/enable/remove via harness.
 
-- [ ] **Phase 8 — Web MIDI**
-  Web MIDI API input → play instruments live and record into the piano roll.
+- [x] **Phase 8 — Web MIDI** ✅ *complete*
+  Web MIDI API input → play instruments live and record into the piano roll. Verified: a simulated
+  MIDI message triggers the target synth live (−16 dB) and, while recording, lands notes in the clip
+  (C4 @ beat 0, E4 @ 0.67). Real device enable needs hardware/permission (wired, not auto-tested).
 
 - [ ] **Phase 9 — Beginner polish**
   Inline help everywhere, presets, onboarding, friendly defaults, empty-state guidance.

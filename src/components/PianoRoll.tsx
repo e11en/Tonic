@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { Button, Panel } from "@/ui";
 import { useTonic } from "@/state/store";
 import { placeNote, removeNote } from "@/state/actions";
+import { enableMidi, setMidiTarget, isMidiEnabled } from "@/audio/webmidi";
 
 interface PianoRollProps {
   trackId: string;
@@ -30,6 +32,20 @@ export function PianoRoll({ trackId, clipId, onClose }: PianoRollProps) {
   const clip = useTonic((s) =>
     s.project.tracks.find((t) => t.id === trackId)?.clips.find((c) => c.id === clipId),
   );
+  const [midiStatus, setMidiStatus] = useState<string>(isMidiEnabled() ? "on" : "");
+
+  // Route MIDI input to this clip/track while the roll is open.
+  useEffect(() => {
+    setMidiTarget({ trackId, clipId });
+    return () => setMidiTarget(null);
+  }, [trackId, clipId]);
+
+  const onEnableMidi = async () => {
+    const res = await enableMidi();
+    setMidiStatus(
+      res.ok ? (res.inputs.length ? `on · ${res.inputs.map((i) => i.name).join(", ")}` : "on · no devices") : res.error ?? "failed",
+    );
+  };
 
   if (!clip?.midi) {
     return (
@@ -66,10 +82,20 @@ export function PianoRoll({ trackId, clipId, onClose }: PianoRollProps) {
         </Button>
       }
     >
-      <p className="t-label" style={{ marginBottom: "var(--space-2)" }}>
-        Click a cell to add a note, click it again to remove. {notes.length} note
-        {notes.length === 1 ? "" : "s"}.
-      </p>
+      <div className="tn-roll__bar">
+        <p className="t-label">
+          Click a cell to add a note, click it again to remove. {notes.length} note
+          {notes.length === 1 ? "" : "s"}.
+        </p>
+        <Button variant={midiStatus.startsWith("on") ? "neutral" : "ghost"} onClick={() => void onEnableMidi()}>
+          🎹 {midiStatus.startsWith("on") ? "MIDI on" : "Enable MIDI"}
+        </Button>
+      </div>
+      {midiStatus && !midiStatus.startsWith("on") && (
+        <p className="t-label" style={{ color: "var(--track-4, #e5534b)" }}>
+          {midiStatus}
+        </p>
+      )}
       <div className="tn-roll" style={{ gridTemplateColumns: `48px repeat(${beats}, ${CELL_W}px)` }}>
         {PITCHES.map((pitch) => (
           <div className="tn-roll__row" key={pitch} style={{ display: "contents" }}>
