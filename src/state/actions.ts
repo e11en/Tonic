@@ -31,6 +31,27 @@ const VOLUME_MAX_DB = 6;
 const clamp = (v: number, min: number, max: number) =>
   Math.min(max, Math.max(min, v));
 
+/** Build a fresh, empty project. */
+export function createEmptyProject(name = "Untitled"): Project {
+  return {
+    id: nanoid(),
+    name,
+    tempo: 120,
+    timeSignature: [4, 4],
+    transport: { state: "stopped", positionSec: 0, loop: null },
+    masterVolumeDb: 0,
+    tracks: [],
+    samples: {},
+  };
+}
+
+/** Reset to a brand-new empty project. */
+export function newProject(): void {
+  tonicStore.setState((s) => {
+    s.project = createEmptyProject();
+  });
+}
+
 /**
  * Replace the whole project (used by persistence to hydrate a saved project on boot).
  * Transport is reset to stopped so a reload never resumes playback unexpectedly.
@@ -576,4 +597,28 @@ export function dispatch<A extends BridgeAction>(
     default:
       throw new Error(`Unknown action: ${String(action)}`);
   }
+}
+
+// ---- starter presets (beginner onboarding) ----
+
+/** Add a drum track pre-programmed with a basic four-on-the-floor beat. Returns track id. */
+export function addBeatStarter(): string {
+  const trackId = addDrumTrack("Beat");
+  const clip = tonicStore.getState().project.tracks.find((t) => t.id === trackId)?.clips[0];
+  if (!clip) return trackId;
+  [0, 4, 8, 12].forEach((s) => setStep(trackId, clip.id, 0, s, true)); // kick
+  [4, 12].forEach((s) => setStep(trackId, clip.id, 1, s, true)); // snare
+  for (let s = 0; s < 16; s += 2) setStep(trackId, clip.id, 2, s, true); // hi-hat
+  return trackId;
+}
+
+/** Add an instrument track with a short ascending melody clip. Returns track id. */
+export function addSynthStarter(): string {
+  const trackId = addTrack({ kind: "instrument", name: "Synth" });
+  const clipId = addMidiClip(trackId, 0, 2);
+  if (!clipId) return trackId;
+  [60, 62, 64, 65, 67].forEach((pitch, i) =>
+    placeNote(trackId, clipId, { pitch, startBeats: i, durationBeats: 1 }),
+  );
+  return trackId;
 }

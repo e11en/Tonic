@@ -1,6 +1,6 @@
 # Roadmap — Tonic
 
-**Status:** 🟢 Phase 1 in progress · local-first web DAW with a live MCP bridge
+**Status:** ✅ Feature-complete (phases 0–9) · local-first web DAW with a live MCP bridge
 
 High-level phases only. When a phase is picked up, its concrete steps are written out in
 `todo.md` (see the documentation workflow in `CLAUDE.md`). The MCP bridge is intentionally pulled
@@ -58,8 +58,14 @@ distinctive and riskiest part — proving it early validates the whole spine.
   MIDI message triggers the target synth live (−16 dB) and, while recording, lands notes in the clip
   (C4 @ beat 0, E4 @ 0.67). Real device enable needs hardware/permission (wired, not auto-tested).
 
-- [ ] **Phase 9 — Beginner polish**
-  Inline help everywhere, presets, onboarding, friendly defaults, empty-state guidance.
+- [x] **Phase 9 — Beginner polish** ✅ *complete*
+  First-run WelcomeOverlay (reopenable via header "?"), one-click starters (beat/synth), empty-state
+  guidance, "New project" reset, friendly defaults, inline help. Verified: fresh load shows welcome;
+  "Start with a beat" dismisses it + builds a playable four-on-the-floor drum track.
+
+---
+
+**🎉 Tonic is feature-complete — all phases 0–9 shipped.**
 
 ---
 

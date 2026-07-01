@@ -16,6 +16,9 @@ import {
   clearLoopRegion,
   addMidiClip,
   addDrumTrack,
+  newProject,
+  addBeatStarter,
+  addSynthStarter,
   play,
   stop,
 } from "@/state/actions";
@@ -26,7 +29,10 @@ import { SampleBrowser } from "./SampleBrowser";
 import { PianoRoll } from "./PianoRoll";
 import { DrumMachine } from "./DrumMachine";
 import { EffectsRack } from "./EffectsRack";
+import { WelcomeOverlay } from "./WelcomeOverlay";
 import "./shell.css";
+
+const ONBOARD_KEY = "tonic.onboarded";
 
 const dbFmt = (v: number) => `${v > 0 ? "+" : ""}${v.toFixed(1)} dB`;
 const panFmt = (v: number) =>
@@ -47,6 +53,30 @@ export function AppShell() {
   const [sidePanel, setSidePanel] = useState<SidePanel>("samples");
   const [editorClip, setEditorClip] = useState<{ trackId: string; clipId: string } | null>(null);
   const [fxTrack, setFxTrack] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try {
+      return localStorage.getItem(ONBOARD_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  });
+
+  const dismissWelcome = () => {
+    setShowWelcome(false);
+    try {
+      localStorage.setItem(ONBOARD_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const confirmNewProject = () => {
+    if (window.confirm("Start a new project? This clears the current one.")) {
+      newProject();
+      setEditorClip(null);
+      setFxTrack(null);
+    }
+  };
 
   // Store-bound state (single source of truth).
   const tempo = useTonic((s) => s.project.tempo);
@@ -172,6 +202,12 @@ export function AppShell() {
         <div className="tn-transport__spacer" />
 
         <div className="tn-transport__group">
+          <Button variant="ghost" onClick={confirmNewProject} title="Start a new project">
+            ＋ New
+          </Button>
+          <Button variant="ghost" onClick={() => setShowWelcome(true)} title="Help & welcome">
+            ?
+          </Button>
           <span className="t-label">Theme</span>
           <Toggle checked={theme === "dark"} onChange={setThemeMode} label={theme} />
         </div>
@@ -212,9 +248,23 @@ export function AppShell() {
           >
             <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
               {tracks.length === 0 && (
-                <p className="t-label" style={{ padding: "var(--space-3)" }}>
-                  No tracks yet. Click “+ Add track” to start.
-                </p>
+                <div className="tn-empty">
+                  <p className="tn-empty__title">Your song is empty — pick a starting point:</p>
+                  <div className="tn-empty__actions">
+                    <Button variant="primary" onClick={addBeatStarter}>
+                      🥁 Start with a beat
+                    </Button>
+                    <Button variant="primary" onClick={addSynthStarter}>
+                      🎹 Start with a synth
+                    </Button>
+                    <Button variant="ghost" onClick={() => addTrack()}>
+                      Empty audio track
+                    </Button>
+                  </div>
+                  <p className="t-label">
+                    Or open <strong>Samples</strong> (📁 on the left) to upload your own audio.
+                  </p>
+                </div>
               )}
               {tracks.map((t) => (
                 <div className="tn-lane" key={t.id}>
@@ -383,6 +433,14 @@ export function AppShell() {
         <div className="tn-fx-overlay">
           <EffectsRack trackId={fxTrack} onClose={() => setFxTrack(null)} />
         </div>
+      )}
+
+      {showWelcome && (
+        <WelcomeOverlay
+          onClose={dismissWelcome}
+          onBeat={addBeatStarter}
+          onSynth={addSynthStarter}
+        />
       )}
     </div>
   );
