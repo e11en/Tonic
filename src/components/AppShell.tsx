@@ -390,7 +390,7 @@ export function AppShell() {
             </Help>
           </div>
           <div className="tn-strip__pan-placeholder" />
-          <Fader value={masterVolume} onChange={setMasterVolume} format={dbFmt} />
+          <Fader value={masterVolume} onChange={setMasterVolume} format={dbFmt} height={104} />
           <LED state="on" title="Master" />
         </div>
 
@@ -413,7 +413,7 @@ export function AppShell() {
               format={panFmt}
               size={44}
             />
-            <Fader value={t.volumeDb} onChange={(v) => setTrackVolume(t.id, v)} format={dbFmt} />
+            <Fader value={t.volumeDb} onChange={(v) => setTrackVolume(t.id, v)} format={dbFmt} height={104} />
             <div className="tn-strip__row">
               <Toggle checked={t.muted} onChange={(v) => setTrackMute(t.id, v)} label="M" />
               <Toggle checked={t.soloed} onChange={(v) => setTrackSolo(t.id, v)} label="S" />
