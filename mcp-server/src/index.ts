@@ -424,9 +424,14 @@ async function main() {
   bridge.start();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("[tonic-mcp] server ready on stdio (tools: get_project, list_tracks, add_track, " +
-    "remove_track, rename_track, set_track_volume, set_track_pan, mute_track, solo_track, " +
-    "set_master_volume, set_tempo, play, stop).");
+  console.error(
+    "[tonic-mcp] server ready on stdio — tools: get_project, list_tracks, list_samples, " +
+      "add_track, remove_track, rename_track, set_track_volume, set_track_pan, mute_track, " +
+      "solo_track, set_master_volume, add_clip, move_clip, remove_clip, add_midi_clip, " +
+      "place_note, remove_note, add_drum_track, set_step, add_effect, remove_effect, " +
+      "set_effect_enabled, set_effect_param, arm_track, set_loop_region, clear_loop_region, " +
+      "set_tempo, play, stop.",
+  );
 }
 
 main().catch((err) => {
